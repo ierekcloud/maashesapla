@@ -167,7 +167,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     
     return {
        totalGross, sgkEmployee, unemployment, totalSgk, gvBaseInput, dvBaseInput, taxObj,
-       nonCashNT: targetYemekNt + targetPstnAdslNt + targetSsyvNt + targetHayatNt + ssyvKesintisiCash + netShuttle,
+       nonCashNT: targetYemekNt + targetPstnAdslNt + targetSsyvNt + targetHayatNt + ssyvKesintisiCash,
        childAllowanceGross, familyAllowanceGross
     };
   };

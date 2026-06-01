@@ -200,10 +200,10 @@ const ResultRowMini = ({
 
 const initialMonthsStatic: MonthInput[] = Array(12)
   .fill(0)
-  .map(() => ({
+  .map((_, i) => ({
     baseGross: 0,
     shiftDays: 0,
-    bonusDays: 0,
+    bonusDays: [2, 4, 6, 8, 10, 11].includes(i) ? (i === 11 ? 12 : 20) : 0,
     holidayWorkHours: 0,
     isMarried: false,
     spouseWorks: false,
@@ -263,39 +263,96 @@ export default function App() {
     new Date().getMonth(),
   );
   const [isMonthMenuOpen, setIsMonthMenuOpen] = useState(false);
+  const [showAppliedFeedback, setShowAppliedFeedback] = useState(false);
 
-  const [workerType, setWorkerType] = useState<"shift" | "non-shift" | null>(
-    null,
-  );
+  const [workerType, setWorkerType] = useState<"shift" | "non-shift" | null>(() => {
+    const savedType = safeLocalStorage.getItem("salary_worker_type_v3");
+    if (savedType === "shift" || savedType === "non-shift") {
+      return savedType;
+    }
+    return null;
+  });
 
   const [monthsData, setMonthsData] = useState<MonthInput[]>(() => {
+    const savedType = safeLocalStorage.getItem("salary_worker_type_v3");
     const savedData = safeLocalStorage.getItem("salary_calculator_data_v3");
     if (savedData) {
       try {
         const parsedData = JSON.parse(savedData);
         if (Array.isArray(parsedData) && parsedData.length === 12) {
+          if (savedType === "shift") {
+            return parsedData.map((m, i) => {
+              if ([2, 4, 6, 8, 10, 11].includes(i)) {
+                return {
+                  ...m,
+                  bonusDays: m.bonusDays === 0 ? (i === 11 ? 12 : 20) : m.bonusDays,
+                };
+              }
+              return m;
+            });
+          }
           return parsedData;
         }
       } catch (e) {
         console.error("Error loading persisted data", e);
       }
     }
+    
+    // Auto-prepopulate correct defaults if loaded as shift on first calculation
+    if (savedType === "shift") {
+      return initialMonthsStatic.map((m, i) => {
+        if ([2, 4, 6, 8, 10, 11].includes(i)) {
+          return {
+            ...m,
+            bonusDays: i === 11 ? 12 : 20,
+          };
+        }
+        return m;
+      });
+    }
     return initialMonthsStatic;
   });
 
   const [results, setResults] = useState<SalaryResult[]>(() => {
+    const savedType = safeLocalStorage.getItem("salary_worker_type_v3") as "shift" | "non-shift" | null;
+    const resolvedType = (savedType === "shift" || savedType === "non-shift") ? savedType : null;
     const savedData = safeLocalStorage.getItem("salary_calculator_data_v3");
     if (savedData) {
       try {
         const parsedData = JSON.parse(savedData);
         if (Array.isArray(parsedData) && parsedData.length === 12) {
-          return calculateYear(parsedData, null);
+          if (resolvedType === "shift") {
+            const migrated = parsedData.map((m, i) => {
+              if ([2, 4, 6, 8, 10, 11].includes(i)) {
+                return {
+                  ...m,
+                  bonusDays: m.bonusDays === 0 ? (i === 11 ? 12 : 20) : m.bonusDays,
+                };
+              }
+              return m;
+            });
+            return calculateYear(migrated, resolvedType);
+          }
+          return calculateYear(parsedData, resolvedType);
         }
       } catch (e) {
         console.error("Error loading persisted results", e);
       }
     }
-    return calculateYear(initialMonthsStatic, null);
+    
+    let initialData = initialMonthsStatic;
+    if (resolvedType === "shift") {
+      initialData = initialMonthsStatic.map((m, i) => {
+        if ([2, 4, 6, 8, 10, 11].includes(i)) {
+          return {
+            ...m,
+            bonusDays: i === 11 ? 12 : 20,
+          };
+        }
+        return m;
+      });
+    }
+    return calculateYear(initialData, resolvedType);
   });
 
   const [history, setHistory] = useState<CalculationHistory[]>(() => {
@@ -387,6 +444,7 @@ export default function App() {
           ...m,
           hasShuttle: false,
           shiftDays: 0,
+          bonusDays: 0,
           workerType: type,
         }));
         setResults(calculateYear(nw, type));
@@ -394,7 +452,19 @@ export default function App() {
       });
     } else {
       setMonthsData((prev) => {
-        const nw = prev.map((m) => ({ ...m, workerType: type }));
+        const nw = prev.map((m, i) => {
+          let defaultBonus = m.bonusDays;
+          if ([2, 4, 6, 8, 10, 11].includes(i)) {
+            defaultBonus = i === 11 ? 12 : 20;
+          } else {
+            defaultBonus = 0;
+          }
+          return {
+            ...m,
+            bonusDays: defaultBonus,
+            workerType: type,
+          };
+        });
         setResults(calculateYear(nw, type));
         return nw;
       });
@@ -521,13 +591,65 @@ export default function App() {
     }
   };
 
+  const applyToAllMonths = () => {
+    const activeData = monthsData[activeMonth];
+    setMonthsData((prev) => {
+      const nw = prev.map((m, i) => {
+        let targetBonusDays = activeData.bonusDays;
+        if (workerType === "shift") {
+          if (activeData.bonusDays === 20 || activeData.bonusDays === 12 || activeData.bonusDays === 0) {
+            if ([2, 4, 6, 8, 10, 11].includes(i)) {
+              targetBonusDays = i === 11 ? 12 : 20;
+            } else {
+              targetBonusDays = 0;
+            }
+          }
+        } else {
+          targetBonusDays = 0;
+        }
+
+        return {
+          ...m,
+          baseGross: activeData.baseGross,
+          shiftDays: activeData.shiftDays,
+          bonusDays: targetBonusDays,
+          holidayWorkHours: activeData.holidayWorkHours,
+          isMarried: activeData.isMarried,
+          spouseWorks: activeData.spouseWorks,
+          childCount: activeData.childCount,
+          bysDeduction: activeData.bysDeduction,
+          bysManuel: activeData.bysManuel,
+          holidayBonusGross: activeData.holidayBonusGross,
+          hasHolidayBonus: activeData.hasHolidayBonus,
+          hasShuttle: activeData.hasShuttle,
+          shuttleDays: activeData.shuttleDays,
+          isDernekMember: activeData.isDernekMember,
+          isUnionMember: activeData.isUnionMember,
+          istanbulTazminati: activeData.istanbulTazminati,
+          yemekGun: activeData.yemekGun,
+          familyAllowanceGrossOverride: activeData.familyAllowanceGrossOverride,
+          childAllowanceGrossOverride: activeData.childAllowanceGrossOverride,
+        };
+      });
+      setResults(calculateYear(nw, workerType));
+      return nw;
+    });
+    
+    // Trigger feedback effect
+    setShowAppliedFeedback(true);
+    setTimeout(() => {
+      setShowAppliedFeedback(false);
+    }, 2000);
+  };
+
   const clearActiveMonth = () => {
     setMonthsData((prev) => {
       const nw = [...prev];
+      const defaultBonus = workerType === "shift" && [2, 4, 6, 8, 10, 11].includes(activeMonth) ? (activeMonth === 11 ? 12 : 20) : 0;
       nw[activeMonth] = {
         baseGross: 0,
         shiftDays: 0,
-        bonusDays: 0,
+        bonusDays: defaultBonus,
         holidayWorkHours: 0,
         isMarried: false,
         spouseWorks: false,
@@ -551,10 +673,10 @@ export default function App() {
     safeLocalStorage.removeItem("salary_calculator_data_v3");
     const nw: MonthInput[] = Array(12)
       .fill(0)
-      .map(() => ({
+      .map((_, i) => ({
         baseGross: 0,
         shiftDays: 0,
-        bonusDays: 0,
+        bonusDays: workerType === "shift" && [2, 4, 6, 8, 10, 11].includes(i) ? (i === 11 ? 12 : 20) : 0,
         holidayWorkHours: 0,
         isMarried: false,
         spouseWorks: false,
@@ -715,7 +837,7 @@ export default function App() {
                 className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden"
               >
                 {/* LEFT: Input Form Area */}
-                <div className="w-full lg:w-[310px] shrink-0 p-4 overflow-y-auto space-y-3.5 border-r border-slate-200/60 dark:border-white/5 bg-white dark:bg-slate-900/45 lg:order-none order-2">
+                <div className="w-full lg:w-[325px] shrink-0 p-4 overflow-y-auto space-y-3.5 border-r border-slate-200/60 dark:border-white/5 bg-white dark:bg-slate-900/45 lg:order-none order-2">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
                     <h3 className="text-[12px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] leading-none">
                       VERİ GİRİŞ ALANI
@@ -938,23 +1060,6 @@ export default function App() {
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Güvenlik ve Gizlilik Bildirimi */}
-                  <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-200/60 dark:border-white/5 flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                      <Lock size={14} />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest block">
-                        GÜVENLİK VE GİZLİLİK
-                      </span>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-relaxed">
-                        Girdiğiniz veriler sadece size özeldir. Tamamen
-                        tarayıcınızda (yerel olarak) işlenir; başka hiçbir
-                        kullanıcı ya da sunucu göremez.
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -1458,13 +1563,36 @@ export default function App() {
 
                 {/* RIGHT: Month Navigation Grid & Info */}
                 <div className="w-full lg:w-[340px] bg-slate-100/40 dark:bg-slate-900/45 border-b lg:border-b-0 lg:border-l border-slate-200/60 dark:border-white/5 p-4 lg:p-5 space-y-4 shrink-0 overflow-y-auto lg:order-last order-first">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Calendar size={18} className="text-blue-500" />
-                      <h3 className="text-[12px] font-black text-slate-900 dark:text-slate-200 uppercase tracking-[0.2em] leading-none">
+                  <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Calendar size={18} className="text-blue-500 shrink-0" />
+                      <h3 className="text-[11px] sm:text-[12px] font-black text-slate-900 dark:text-slate-200 uppercase tracking-widest leading-none">
                         BORDRO DÖNEMİ
                       </h3>
                     </div>
+                    
+                    <button
+                      onClick={applyToAllMonths}
+                      className={cn(
+                        "px-2 py-1 rounded-lg text-[8.5px] font-black uppercase tracking-widest flex items-center gap-1 transition-all active:scale-95 border",
+                        showAppliedFeedback
+                          ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                          : "bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:scale-[1.02]"
+                      )}
+                      title="Aktif ayın tüm verilerini diğer aylara kopyalar"
+                    >
+                      {showAppliedFeedback ? (
+                        <>
+                          <Check size={11} className="text-emerald-600 dark:text-emerald-400" />
+                          2026 YILLIK UYGULANDI!
+                        </>
+                      ) : (
+                        <>
+                          <Check size={11} className="text-blue-600 dark:text-blue-400" />
+                          2026 YILLIK UYGULA
+                        </>
+                      )}
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-4 gap-1.5">
@@ -1766,14 +1894,36 @@ export default function App() {
         </p>
       </div>
 
-      <footer className="fixed bottom-6 w-full px-8 flex justify-start items-end pointer-events-none z-40">
+      <footer className="fixed bottom-4 left-4 lg:left-6 z-40 pointer-events-auto flex flex-col items-start gap-2 max-w-[170px] w-full hidden lg:flex">
+        {/* Security & Privacy Notice (Square Block) */}
+        <div className="w-full aspect-square rounded-2xl p-2.5 bg-gradient-to-br from-emerald-500/[0.09] via-teal-500/[0.05] to-cyan-500/[0.04] dark:from-emerald-500/[0.18] dark:via-teal-500/[0.1] dark:to-cyan-500/[0.06] border border-emerald-500/25 dark:border-emerald-500/35 shadow-xl flex flex-col justify-between backdrop-blur-md">
+          <div className="flex items-center justify-between w-full">
+            <div className="w-6.5 h-6.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-inner">
+              <Lock size={12} className="animate-pulse" />
+            </div>
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[7px] font-black tracking-wider uppercase">
+              GÜVENLİ
+              <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+            </span>
+          </div>
+          
+          <div className="space-y-0.5">
+            <span className="text-[8px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest block leading-none">
+              GÜVENLİK VE GİZLİLİK
+            </span>
+            <p className="text-[9px] text-slate-700 dark:text-slate-200 font-semibold leading-normal">
+              Girdiğiniz veriler sadece size özeldir. Tamamen tarayıcınızda (yerel olarak) işlenir; başka hiçbir kullanıcı ya da sunucu göremez.
+            </p>
+          </div>
+        </div>
+
         {/* Signature */}
-        <div className="opacity-60 hover:opacity-100 transition-all group pointer-events-auto translate-y-2 hover:translate-y-0">
+        <div className="opacity-60 hover:opacity-100 transition-all group translate-y-1 hover:translate-y-0 pl-1">
           <div className="flex flex-col items-start">
-            <span className="text-[9px] font-black tracking-[0.4em] text-slate-500 dark:text-slate-400 uppercase mb-1">
+            <span className="text-[8px] font-black tracking-[0.4em] text-slate-500 dark:text-slate-400 uppercase mb-0.5 animate-pulse">
               CREATED BY
             </span>
-            <span className="text-3xl font-black italic tracking-tighter text-slate-950 dark:text-white bg-clip-text text-transparent bg-gradient-to-br from-slate-900 via-blue-600 to-indigo-600 dark:from-white dark:via-blue-400 dark:to-indigo-400 font-serif">
+            <span className="text-xl font-black italic tracking-tighter text-slate-950 dark:text-white bg-clip-text text-transparent bg-gradient-to-br from-slate-900 via-blue-600 to-indigo-600 dark:from-white dark:via-blue-400 dark:to-indigo-400 font-serif leading-none">
               Erek
             </span>
           </div>
