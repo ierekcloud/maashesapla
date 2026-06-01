@@ -976,9 +976,9 @@ export default function App() {
                   <div className="max-w-[580px] mx-auto w-full bg-slate-900 dark:bg-slate-800 rounded-[1.5rem] p-4.5 shadow-2xl relative overflow-hidden group border border-slate-700 dark:border-white/10">
                     <div className="absolute inset-0 bg-gradient-to-br from-rose-500/10 via-transparent to-emerald-500/10 opacity-60 group-hover:opacity-100 transition-opacity duration-700" />
  
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10 items-stretch">
+                    <div className="grid grid-cols-1 gap-4 relative z-10 items-stretch justify-items-center">
                       {/* Sol Taraf: Bankaya Yatan Net Maaş (Kare & Göz Alıcı Modern Tasarım) */}
-                      <div className="bg-slate-950/40 dark:bg-black/25 border border-slate-700/50 dark:border-white/[0.04] p-4 rounded-xl flex flex-col justify-between text-center aspect-[1.25] sm:aspect-square hover:border-emerald-500/20 transition-all duration-300 relative group/card overflow-hidden">
+                      <div className="bg-slate-950/40 dark:bg-black/25 border border-slate-700/50 dark:border-white/[0.04] p-4 rounded-xl flex flex-col justify-between text-center aspect-video w-full max-w-[280px] hover:border-emerald-500/20 transition-all duration-300 relative group/card overflow-hidden">
                         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
                         
                         <div className="w-full flex justify-between items-center">
@@ -1014,54 +1014,6 @@ export default function App() {
                           <p className="text-[9.5px] text-slate-400 dark:text-slate-300 font-medium leading-normal max-w-[220px] mx-auto">
                             Vergiler ve SGK ödemeleri düşülmüş banka net tutarıdır.
                           </p>
-                        </div>
-                      </div>
- 
-                      {/* Sağ Taraf: Net Maaş + Yemek Ücreti (Kare & Göz Alıcı Modern Tasarım) */}
-                      <div className="bg-slate-950/40 dark:bg-black/25 border border-slate-700/50 dark:border-white/[0.04] p-4 rounded-xl flex flex-col justify-between text-center aspect-[1.25] sm:aspect-square hover:border-indigo-500/20 transition-all duration-300 relative group/card overflow-hidden">
-                        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
- 
-                        <div className="w-full flex justify-between items-center">
-                          <span className="text-[10px] font-black text-slate-300 dark:text-slate-350 uppercase tracking-[0.12em]">
-                            NET MAAŞ + YEMEK
-                          </span>
-                          <button
-                            onClick={() =>
-                              handleCopy(
-                                "net_yemek",
-                                formatCurrency(
-                                  activeResult.netPaid + activeYemekAmount,
-                                ),
-                              )
-                            }
-                            className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[8px] uppercase font-black tracking-widest rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 active:scale-95 transition-all cursor-pointer"
-                            title="Toplam hak edişi kopyala"
-                          >
-                            {copiedKey === "net_yemek" ? (
-                              <Check size={8} className="text-white" />
-                            ) : (
-                              <Copy size={8} className="text-white" />
-                            )}
-                            {copiedKey === "net_yemek" ? "Kopyalandı" : "Kopyala"}
-                          </button>
-                        </div>
- 
-                        <div className="my-auto py-2 flex flex-col items-center">
-                          <span className="text-2xl sm:text-3xl font-display font-black text-white tracking-tighter block">
-                            {formatCurrency(activeResult.netPaid + activeYemekAmount)}
-                          </span>
-                        </div>
- 
-                        <div className="w-full">
-                          <div className="px-2 py-0.5 bg-emerald-500/5 dark:bg-emerald-500/15 rounded-lg border border-emerald-500/10 text-[8.5px] text-slate-300 font-bold flex items-center justify-between gap-1 max-w-[200px] mx-auto">
-                            <span className="flex items-center gap-1 text-slate-400">
-                              <span className="w-1 h-1 rounded-full bg-emerald-400" />
-                              Yemek (Metropol):
-                            </span>
-                            <span className="text-emerald-400 font-extrabold font-mono text-[10px]">
-                              {formatCurrency(activeYemekAmount)}
-                            </span>
-                          </div>
                         </div>
                       </div>
                     </div>
@@ -1856,19 +1808,20 @@ Tekniker Derneği Üye mi: ${monthsData[activeMonth].isDernekMember ? "Evet" : "
         </div>
       </main>
 
-      <footer className="fixed bottom-6 left-0 right-0 w-full px-8 md:px-12 flex justify-between items-end pointer-events-none z-40">
-        <div className="max-w-[250px] pointer-events-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 py-3 rounded-2xl border border-slate-200/80 dark:border-white/10 shadow-md flex items-center gap-2.5 transition-all hover:scale-[1.02] hover:shadow-lg">
-          <div className="w-6 h-6 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
-            <Info size={13} strokeWidth={2.5} />
-          </div>
-          <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 leading-normal text-left">
-            Hata veya eklenmesini istedikleriniz için iletişime geçin.
-          </p>
+      {/* Notification Box */}
+      <div className="fixed bottom-6 right-6 z-50 max-w-[200px] pointer-events-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-md flex items-center gap-2 transition-all hover:scale-[1.02] hover:shadow-lg">
+        <div className="w-5 h-5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+          <Info size={11} strokeWidth={2.5} />
         </div>
+        <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 leading-tight text-right break-words">
+          Hata veya eklenmesini istedikleriniz için iletişime geçin.
+        </p>
+      </div>
 
+      <footer className="fixed bottom-6 w-full px-8 flex justify-start items-end pointer-events-none z-40">
         {/* Signature */}
         <div className="opacity-60 hover:opacity-100 transition-all group pointer-events-auto translate-y-2 hover:translate-y-0">
-          <div className="flex flex-col items-end">
+          <div className="flex flex-col items-start">
             <span className="text-[9px] font-black tracking-[0.4em] text-slate-500 dark:text-slate-400 uppercase mb-1">
               CREATED BY
             </span>
@@ -1878,6 +1831,7 @@ Tekniker Derneği Üye mi: ${monthsData[activeMonth].isDernekMember ? "Evet" : "
           </div>
         </div>
       </footer>
+
     </div>
   );
 }
