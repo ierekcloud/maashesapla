@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MaaşPusulası - Profesyonel Maaş Takip</title>
+    <link rel="manifest" href="/manifest.json" />
+  </head>
+  <body>
+    <script>
+      if (window.location.href.indexOf('index.html') !== -1 && window.location.protocol === 'file:') {
+        document.body.innerHTML = '<div style="padding: 50px; text-align: center; font-family: sans-serif; background: #fff1f2; color: #be123c; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">' +
+          '<h1 style="font-size: 3rem; margin-bottom: 20px;">⚠️ LÜTFEN DOSYALARI DİZİNE ÇIKARDIKTAN SONRA <b>Maas_Hesapla.html</b> DOSYASINA TIKLAYIN</h1>' +
+          '<p style="font-size: 1.5rem; max-width: 600px; line-height: 1.5;">Şu an "index.html" dosyasındasınız. Bu geliştirici dosyasıdır.</p>' +
+        '</div>';
+        throw new Error("Lütfen Maas_Hesapla.html dosyasını kullanın!");
+      }
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

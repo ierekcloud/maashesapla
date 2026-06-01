@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@700&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Space Grotesk", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-[#f8fafc] text-slate-900 antialiased;
+  }
+}
+
+/* Custom Backgrounds */
+.bg-mesh {
+  background-color: #f1f5f9;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(210,40%,96%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(220,40%,95%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(230,40%,96%,1) 0, transparent 50%);
+}
+
+.dark .bg-mesh {
+  background-color: #020617;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(220,100%,10%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(230,100%,8%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(240,100%,10%,1) 0, transparent 50%);
+}
+
+.glass-panel {
+  @apply backdrop-blur-3xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/10 shadow-[0_8px_40px_rgba(15,23,42,0.03)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.3)];
+}
+
+/* Hide number input arrows */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.input-focus-ring {
+  @apply focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500;
+}
+
+.stat-card {
+  @apply bg-white border border-slate-100 p-6 rounded-[2rem] transition-all duration-300 hover:shadow-xl hover:shadow-slate-200/50 hover:-translate-y-1;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-br from-blue-600 to-indigo-700;
+}
