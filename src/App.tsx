@@ -1046,59 +1046,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Hızlı Detay Rapor Kopyalayıcı */}
-                    <div className="flex justify-center mt-4 relative z-10">
-                      <button
-                        onClick={() => {
-                          const currentMonthName = shortMonths[activeMonth];
-                          const typeText =
-                            workerType === "shift"
-                              ? "Vardiyalı (Shift)"
-                              : "Vardiyasız (Non-Shift)";
-                          const shuttleText =
-                            workerType === "shift"
-                              ? monthsData[activeMonth].hasShuttle
-                                ? "Evet (20 Gün * 303.38 TL Brüt Yol Ücreti)"
-                                : `Hayır (${monthsData[activeMonth].shiftDays || 0} Gün * 303.38 TL Brüt Yol Ücreti)`
-                              : "Yok";
-                          const shiftText =
-                            workerType === "shift"
-                              ? `${monthsData[activeMonth].shiftDays || 0} Gün`
-                              : "Yok";
 
-                          const reportText = `--- MAAŞ HESAPLAMA DETAYLI RAPORU ---
-Ay: ${currentMonthName}
-Çalışan Türü: ${typeText}
--------------------------------------
-Ana Brüt Maaş: ${formatCurrency(monthsData[activeMonth].baseGross)}
-Toplam Brüt Maaş: ${formatCurrency(activeResult.totalGross)}
-Bankaya Yatan Net Maaş: ${formatCurrency(activeResult.netPaid)}
-Yemek Ücreti (Metropol): ${formatCurrency(activeYemekAmount)}
-Net Maaş + Yemek (Toplam Hak Ediş): ${formatCurrency(activeResult.netPaid + activeYemekAmount)}
-Vergi Dilimi: %${activeResult.taxBracket}
--------------------------------------
-Vardiya Günü: ${shiftText}
-Servis Kullanıyor mu: ${shuttleText}
-İkramiye Günü: ${monthsData[activeMonth].bonusDays || 0} Gün
-Tatil Çalışma Saati: ${monthsData[activeMonth].holidayWorkHours || 0} Saat
-Bes Kesintisi: ${monthsData[activeMonth].bysDeduction ? "Evet" : "Hayır"}${monthsData[activeMonth].bysManuel ? ` (${monthsData[activeMonth].bysManuel} TL)` : ""}
-Tekniker Derneği Üye mi: ${monthsData[activeMonth].isDernekMember ? "Evet" : "Hayır"}
-İstanbul Tazminatı: ${monthsData[activeMonth].istanbulTazminati ? `${formatCurrency(monthsData[activeMonth].istanbulTazminati)}` : "Yok"}
--------------------------------------`;
-                          handleCopy("month_report", reportText);
-                        }}
-                        className="inline-flex items-center gap-1.5 px-4.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-black uppercase tracking-widest active:scale-95 shadow-lg shadow-indigo-500/10 border border-indigo-500/30 transition-all cursor-pointer"
-                      >
-                        {copiedKey === "month_report" ? (
-                          <Check size={11} />
-                        ) : (
-                          <Copy size={11} />
-                        )}
-                        {copiedKey === "month_report"
-                          ? "RAPOR KOPYALANDI!"
-                          : "AYLIK RAPORU PANOPA KOPYALA"}
-                      </button>
-                    </div>
                   </div>
 
                   <div className="hidden">
