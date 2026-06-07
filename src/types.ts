@@ -19,7 +19,7 @@ export interface MonthInput {
   yemekGun: number;
   familyAllowanceGrossOverride?: number;
   childAllowanceGrossOverride?: number;
-  workerType?: 'shift' | 'non-shift';
+  workerType?: 'shift' | 'non-shift' | 'shift-non-union';
 }
 
 export interface SalaryResult {

@@ -45,7 +45,7 @@ export function calculateIncomeTax(taxableIncome: number, cumulative: number) {
   return { tax: totalTax, bracketRate: bracketStr, currentTaxable: taxableIncome };
 }
 
-export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift' | 'non-shift' | null): SalaryResult[] {
+export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift' | 'non-shift' | 'shift-non-union' | null): SalaryResult[] {
   let cumulativeTaxBase = 0;
   let cumulativeMinWageTaxBase = 0;
   const results: SalaryResult[] = [];
@@ -93,11 +93,11 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     const DAILY_GROSS = m.baseGross / 30;
     const HOURLY_GROSS = DAILY_GROSS / 7.5;
     const holidayGross = m.workerType === 'non-shift' ? 0 : ((m.holidayWorkHours || 0) * (DAILY_GROSS * 2.0)); 
-    const ikramiyeGross = m.workerType === 'non-shift' ? 0 : ((m.bonusDays || 0) * (DAILY_GROSS * 1.0)); 
+    const ikramiyeGross = ((m.bonusDays || 0) * (DAILY_GROSS * 1.0)); 
     const vardiyaGross = m.shiftHours ? (m.shiftHours * (685.20 / 7.5)) : ((m.shiftDays || 0) * 685.20); 
     const shuttleGross = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 303.38) : ((m.shiftDays || 0) * 303.38));
     const istanbulGross = m.istanbulTazminati || 0;
-    const additionalHolidayBonus = m.workerType === 'non-shift' ? 0 : (m.hasHolidayBonus ? 17875 : (m.holidayBonusGross || 0));
+    const additionalHolidayBonus = m.hasHolidayBonus ? 17875 : (m.holidayBonusGross || 0);
     
     // Non-Cash benefits target net values (Telekom specifications)
     // Only applied if we assume it's a shifted / telekom user... we will apply if yemekGun > 0 or istanbul > 0
@@ -208,9 +208,9 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     const legalNet = currDet.totalGross - totalLegalDeductions;
     
     // Private deductions (Non-cash reversed out)
-    const bysKesintisi = (data.workerType === 'non-shift') ? 0 : (data.bysDeduction ? (data.bysManuel || 0) : 0);
-    const dernekKesintisi = (data.workerType === 'non-shift') ? 0 : (data.isDernekMember ? 150 : 0);
-    const unionDuesDeduction = (data.workerType === 'non-shift') ? 0 : (data.isUnionMember ? (data.baseGross / 30) * 0.80 : 0);
+    const bysKesintisi = (data.bysDeduction ? (data.bysManuel || 0) : 0);
+    const dernekKesintisi = (data.isDernekMember ? 150 : 0);
+    const unionDuesDeduction = (data.isUnionMember ? (data.baseGross / 30) * 0.80 : 0);
     
     // Total non-cash reverse + standard private deductions
     const nonCashBenefitDeduction = currDet.nonCashNT + bysKesintisi + dernekKesintisi + unionDuesDeduction;

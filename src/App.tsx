@@ -21,6 +21,7 @@ import {
   Copy,
   Check,
   Gift,
+  Shield,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -43,6 +44,35 @@ import { formatCurrency, cn } from "./lib/utils";
 
 // --- Sub-components ---
 
+const DateTimeWeatherWidget = () => {
+  const [time, setTime] = useState(new Date());
+  const [weather, setWeather] = useState<number | null>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    // Istanbul coordinates for weather
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=41.0082&longitude=28.9784&current=temperature_2m")
+      .then(res => res.json())
+      .then(data => setWeather(data.current.temperature_2m))
+      .catch(console.error);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="flex items-center gap-3 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 dark:from-blue-600/60 dark:to-indigo-600/60 px-5 py-3 rounded-3xl border border-blue-400/30 backdrop-blur-md shadow-inner">
+      <div className="flex flex-col items-end">
+        <span className="text-[12px] font-black text-blue-700 dark:text-blue-100 uppercase tracking-widest">{time.toLocaleDateString("tr-TR")}</span>
+        <span className="text-2xl font-display font-black text-slate-950 dark:text-white leading-none">{time.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" })}</span>
+      </div>
+      {weather !== null && (
+        <div className="text-2xl font-black text-indigo-700 dark:text-indigo-200">
+          {Math.round(weather)}°C
+        </div>
+      )}
+    </div>
+  );
+};
+
 const InputField = ({
   label,
   value,
@@ -50,6 +80,7 @@ const InputField = ({
   prefix = "₺",
   suffix = "",
   readOnly = false,
+  isHighlight = false,
 }: {
   label: string;
   value: number;
@@ -57,10 +88,11 @@ const InputField = ({
   prefix?: string;
   suffix?: string;
   readOnly?: boolean;
+  isHighlight?: boolean;
 }) => (
-  <div className="group relative">
+  <div className={cn("group relative", isHighlight && "ring-2 ring-amber-500/50 rounded-2xl bg-amber-500/5")}>
     <div className="flex justify-between items-center mb-1.5 px-1">
-      <label className="text-[11px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">
+      <label className={cn("text-[11px] font-black uppercase tracking-widest", isHighlight ? "text-amber-700 dark:text-amber-400" : "text-rose-600 dark:text-rose-400")}>
         {label}
       </label>
       {suffix && (
@@ -262,16 +294,12 @@ export default function App() {
   const [activeMonth, setActiveMonth] = useState<number>(() =>
     new Date().getMonth(),
   );
+  const [showPrivacyNotice, setShowPrivacyNotice] = useState(true);
+  const [showSuggestionBox, setShowSuggestionBox] = useState(true);
   const [isMonthMenuOpen, setIsMonthMenuOpen] = useState(false);
   const [showAppliedFeedback, setShowAppliedFeedback] = useState(false);
 
-  const [workerType, setWorkerType] = useState<"shift" | "non-shift" | null>(() => {
-    const savedType = safeLocalStorage.getItem("salary_worker_type_v3");
-    if (savedType === "shift" || savedType === "non-shift") {
-      return savedType;
-    }
-    return null;
-  });
+  const [workerType, setWorkerType] = useState<"shift" | "non-shift" | "shift-non-union" | null>(null);
 
   const [monthsData, setMonthsData] = useState<MonthInput[]>(() => {
     const savedType = safeLocalStorage.getItem("salary_worker_type_v3");
@@ -279,17 +307,13 @@ export default function App() {
     if (savedData) {
       try {
         const parsedData = JSON.parse(savedData);
-        if (Array.isArray(parsedData) && parsedData.length === 12) {
-          if (savedType === "shift") {
-            return parsedData.map((m, i) => {
-              if ([2, 4, 6, 8, 10, 11].includes(i)) {
-                return {
-                  ...m,
-                  bonusDays: m.bonusDays === 0 ? (i === 11 ? 12 : 20) : m.bonusDays,
-                };
-              }
-              return m;
-            });
+        if (parsedData.length === 12) {
+          if (savedType === "shift" || savedType === "non-shift") {
+            const defaults = (i: number) => [2, 4, 6, 8, 10, 11].includes(i) ? (i === 11 ? 12 : 20) : 0;
+            return parsedData.map((m, i) => ({
+              ...m,
+              bonusDays: (savedType === "non-shift" && [2, 4, 6, 8, 10, 11].includes(i)) ? defaults(i) : m.bonusDays,
+            }));
           }
           return parsedData;
         }
@@ -298,8 +322,8 @@ export default function App() {
       }
     }
     
-    // Auto-prepopulate correct defaults if loaded as shift on first calculation
-    if (savedType === "shift") {
+    // Auto-prepopulate correct defaults if loaded as shift or non-shift on first calculation
+    if (savedType === "shift" || savedType === "non-shift") {
       return initialMonthsStatic.map((m, i) => {
         if ([2, 4, 6, 8, 10, 11].includes(i)) {
           return {
@@ -397,6 +421,10 @@ export default function App() {
 
   useEffect(() => {
     (window as any).MaasAppInitialized = true;
+    const savedType = safeLocalStorage.getItem("salary_worker_type_v3");
+    if (savedType) {
+      setWorkerType(savedType as any);
+    }
   }, []);
 
   const shortMonths = [
@@ -435,16 +463,18 @@ export default function App() {
     });
   }, [results, monthsData]);
 
-  const handleWorkerTypeSelect = (type: "shift" | "non-shift") => {
+  const handleWorkerTypeSelect = (type: "shift" | "non-shift" | "shift-non-union") => {
     setWorkerType(type);
+    setShowPrivacyNotice(true);
+    setShowSuggestionBox(true);
 
     if (type === "non-shift") {
       setMonthsData((prev) => {
-        const nw = prev.map((m) => ({
+        const nw = prev.map((m, i) => ({
           ...m,
           hasShuttle: false,
           shiftDays: 0,
-          bonusDays: 0,
+          bonusDays: [2, 4, 6, 8, 10, 11].includes(i) ? (i === 11 ? 12 : 20) : 0,
           workerType: type,
         }));
         setResults(calculateYear(nw, type));
@@ -459,9 +489,14 @@ export default function App() {
           } else {
             defaultBonus = 0;
           }
+          let isUnion = m.isUnionMember;
+          if (type === 'shift-non-union') {
+              isUnion = false;
+          }
           return {
             ...m,
             bonusDays: defaultBonus,
+            isUnionMember: isUnion,
             workerType: type,
           };
         });
@@ -596,7 +631,7 @@ export default function App() {
     setMonthsData((prev) => {
       const nw = prev.map((m, i) => {
         let targetBonusDays = activeData.bonusDays;
-        if (workerType === "shift") {
+        if (workerType === "shift" || workerType === "non-shift") {
           if (activeData.bonusDays === 20 || activeData.bonusDays === 12 || activeData.bonusDays === 0) {
             if ([2, 4, 6, 8, 10, 11].includes(i)) {
               targetBonusDays = i === 11 ? 12 : 20;
@@ -645,7 +680,7 @@ export default function App() {
   const clearActiveMonth = () => {
     setMonthsData((prev) => {
       const nw = [...prev];
-      const defaultBonus = workerType === "shift" && [2, 4, 6, 8, 10, 11].includes(activeMonth) ? (activeMonth === 11 ? 12 : 20) : 0;
+      const defaultBonus = (workerType === "shift" || workerType === "non-shift") && [2, 4, 6, 8, 10, 11].includes(activeMonth) ? (activeMonth === 11 ? 12 : 20) : 0;
       nw[activeMonth] = {
         baseGross: 0,
         shiftDays: 0,
@@ -676,7 +711,7 @@ export default function App() {
       .map((_, i) => ({
         baseGross: 0,
         shiftDays: 0,
-        bonusDays: workerType === "shift" && [2, 4, 6, 8, 10, 11].includes(i) ? (i === 11 ? 12 : 20) : 0,
+        bonusDays: (workerType === "shift" || workerType === "non-shift") && [2, 4, 6, 8, 10, 11].includes(i) ? (i === 11 ? 12 : 20) : 0,
         holidayWorkHours: 0,
         isMarried: false,
         spouseWorks: false,
@@ -735,6 +770,7 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-3">
+          <DateTimeWeatherWidget />
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
             className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white dark:bg-white/5 text-slate-500 dark:text-white/50 border border-slate-200 dark:border-white/10 hover:border-blue-500/50 transition-all shadow-sm"
@@ -794,7 +830,7 @@ export default function App() {
                   belirtmeniz gerekmektedir.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                   <button
                     onClick={() => handleWorkerTypeSelect("shift")}
                     className="group flex flex-col items-center justify-center p-10 w-72 rounded-[3rem] bg-white dark:bg-slate-800/50 border-2 border-transparent hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-slate-800 transition-all duration-500 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-blue-500/10 relative overflow-hidden"
@@ -802,11 +838,26 @@ export default function App() {
                     <div className="w-20 h-20 rounded-[2rem] bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-500">
                       <History size={40} strokeWidth={2} />
                     </div>
-                    <span className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-3">
-                      Vardiyalıyım
+                    <span className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-3">
+                      Vardiyalı (Sendikalı)
                     </span>
-                    <span className="text-sm text-slate-500 dark:text-slate-400 text-center font-bold tracking-[0.2em] uppercase">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 text-center font-bold tracking-[0.2em] uppercase">
                       7/24 DÖNÜŞÜMLÜ
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => handleWorkerTypeSelect("shift-non-union")}
+                    className="group flex flex-col items-center justify-center p-10 w-72 rounded-[3rem] bg-white dark:bg-slate-800/50 border-2 border-transparent hover:border-emerald-500/50 hover:bg-emerald-50/50 dark:hover:bg-slate-800 transition-all duration-500 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-emerald-500/10 relative overflow-hidden"
+                  >
+                    <div className="w-20 h-20 rounded-[2rem] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                      <Shield size={40} strokeWidth={2} />
+                    </div>
+                    <span className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-3">
+                      Vardiyalı (Vardiyalı Mühendis)
+                    </span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 text-center font-bold tracking-[0.2em] uppercase">
+                      DÖNÜŞÜMLÜ
                     </span>
                   </button>
 
@@ -817,11 +868,11 @@ export default function App() {
                     <div className="w-20 h-20 rounded-[2rem] bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
                       <Calendar size={40} strokeWidth={2} />
                     </div>
-                    <span className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-3">
-                      Vardiyasızım
+                    <span className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight mb-3">
+                      Vardiyasız
                     </span>
-                    <span className="text-sm text-slate-500 dark:text-slate-400 text-center font-bold tracking-[0.2em] uppercase">
-                      SABİT MESAİ
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 text-center font-bold tracking-[0.2em] uppercase">
+                      NORMAL MESAİ
                     </span>
                   </button>
                 </div>
@@ -863,29 +914,47 @@ export default function App() {
                         }
                       />
 
+                      {(workerType === "shift" || workerType === "shift-non-union") && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <InputField
+                            label="VARDİYA GÜNÜ"
+                            value={monthsData[activeMonth].shiftDays}
+                            onChange={(v) => updateMonth(activeMonth, "shiftDays", v)}
+                            prefix=""
+                            suffix="GÜN"
+                          />
+                          {workerType === "shift" && (
+                            <InputField
+                              label={[2, 4, 6, 8, 10, 11].includes(activeMonth) ? "İKRAMİYE GÜN (BONUS AYI)" : "İKRAMİYE GÜN"}
+                              value={monthsData[activeMonth].bonusDays}
+                              onChange={(v) => updateMonth(activeMonth, "bonusDays", v)}
+                              prefix=""
+                              suffix="GÜN"
+                            />
+                          )}
+                        </div>
+                      )}
+                      
+                      {workerType === "non-shift" && (
+                        <div className="grid grid-cols-1 gap-4">
+                          <InputField
+                            label={[2, 4, 6, 8, 10, 11].includes(activeMonth) ? "İKRAMİYE GÜN (BONUS AYI)" : "İKRAMİYE GÜN"}
+                            value={monthsData[activeMonth].bonusDays}
+                            onChange={(v) => updateMonth(activeMonth, "bonusDays", v)}
+                            prefix=""
+                            suffix="GÜN"
+                            isHighlight={[2, 4, 6, 8, 10, 11].includes(activeMonth)}
+                          />
+                          {[2, 4, 6, 8, 10, 11].includes(activeMonth) && (
+                            <div className="text-[10px] text-amber-700 dark:text-amber-400 font-bold px-1 mt-1">
+                              ₺ Bu ay ikramiye alacaksın.
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {workerType === "shift" && (
                         <>
-                          <div className="grid grid-cols-2 gap-4">
-                            <InputField
-                              label="VARDİYA GÜNÜ"
-                              value={monthsData[activeMonth].shiftDays}
-                              onChange={(v) =>
-                                updateMonth(activeMonth, "shiftDays", v)
-                              }
-                              prefix=""
-                              suffix="GÜN"
-                            />
-                            <InputField
-                              label="İKRAMİYE GÜN"
-                              value={monthsData[activeMonth].bonusDays}
-                              onChange={(v) =>
-                                updateMonth(activeMonth, "bonusDays", v)
-                              }
-                              prefix=""
-                              suffix="GÜN"
-                            />
-                          </div>
-
                           <div className="p-3.5 bg-rose-500/[0.03] dark:bg-rose-500/[0.02] rounded-2xl border border-rose-500/10 dark:border-white/5 text-[11px] text-slate-600 dark:text-slate-400 font-medium leading-relaxed flex gap-2">
                             <span className="text-xs shrink-0 mt-0.5">⚠️</span>
                             <span>
@@ -927,19 +996,6 @@ export default function App() {
                         </>
                       )}
 
-                      {workerType === "non-shift" && (
-                        <div className="grid grid-cols-1 gap-4">
-                          <InputField
-                            label="VARDİYA GÜNÜ"
-                            value={monthsData[activeMonth].shiftDays}
-                            onChange={(v) =>
-                              updateMonth(activeMonth, "shiftDays", v)
-                            }
-                            prefix=""
-                            suffix="GÜN"
-                          />
-                        </div>
-                      )}
 
                       {workerType === "shift" && (
                         <div className="grid grid-cols-1 gap-4">
@@ -1011,13 +1067,11 @@ export default function App() {
                             updateMonth(activeMonth, "childCount", v)
                           }
                         />
-                      </div>
 
-                      <div className="pt-4 space-y-4 border-t border-slate-100 dark:border-white/5">
-                        {workerType === "shift" && (
+                             {(workerType === "shift" || workerType === "non-shift") && (
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <ToggleField
-                              label="TEKNiKER DERNEK ÜYE MİSİN ?"
+                              label="TEKNİKER DERNEK ÜYE MİSİN ?"
                               value={monthsData[activeMonth].isDernekMember}
                               onChange={(v) =>
                                 updateMonth(activeMonth, "isDernekMember", v)
@@ -1885,37 +1939,65 @@ export default function App() {
       </main>
 
       {/* Notification Box */}
-      <div className="fixed bottom-6 right-6 z-50 max-w-[200px] pointer-events-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-md flex items-center gap-2 transition-all hover:scale-[1.02] hover:shadow-lg">
-        <div className="w-5 h-5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-          <Info size={11} strokeWidth={2.5} />
+      {showSuggestionBox && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-[200px] pointer-events-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-md flex items-center gap-2 transition-all">
+          <button
+            onClick={() => setShowSuggestionBox(false)}
+            className="text-slate-500 hover:text-rose-500 transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <a
+            href="mailto:ibrahim.erek@turktelekom.com.tr"
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <div className="w-5 h-5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Info size={11} strokeWidth={2.5} />
+            </div>
+            <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 leading-tight text-right break-words">
+              Öneri ve Talepleriniz için mail iletebilirsiniz.
+            </p>
+          </a>
         </div>
-        <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 leading-tight text-right break-words">
-          Hata veya eklenmesini istedikleriniz için iletişime geçin.
-        </p>
-      </div>
+      )}
 
       <footer className="fixed bottom-4 left-4 lg:left-6 z-40 pointer-events-auto flex flex-col items-start gap-2 max-w-[170px] w-full hidden lg:flex">
         {/* Security & Privacy Notice (Square Block) */}
-        <div className="w-full aspect-square rounded-2xl p-2.5 bg-gradient-to-br from-emerald-500/[0.09] via-teal-500/[0.05] to-cyan-500/[0.04] dark:from-emerald-500/[0.18] dark:via-teal-500/[0.1] dark:to-cyan-500/[0.06] border border-emerald-500/25 dark:border-emerald-500/35 shadow-xl flex flex-col justify-between backdrop-blur-md">
-          <div className="flex items-center justify-between w-full">
-            <div className="w-6.5 h-6.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-inner">
-              <Lock size={12} className="animate-pulse" />
+        {showPrivacyNotice && (
+          <div className="w-full aspect-square rounded-2xl p-2.5 bg-gradient-to-br from-emerald-500/[0.09] via-teal-500/[0.05] to-cyan-500/[0.04] dark:from-emerald-500/[0.18] dark:via-teal-500/[0.1] dark:to-cyan-500/[0.06] border border-emerald-500/25 dark:border-emerald-500/35 shadow-xl flex flex-col justify-between backdrop-blur-md">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-1.5">
+                <div className="w-6.5 h-6.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-inner">
+                  <Lock size={12} className="animate-pulse" />
+                </div>
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[7px] font-black tracking-wider uppercase">
+                  GÜVENLİ
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                </span>
+              </div>
+              <button
+                onClick={() => setShowPrivacyNotice(false)}
+                className="text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 transition-colors"
+                title="Kapat"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[7px] font-black tracking-wider uppercase">
-              GÜVENLİ
-              <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-            </span>
+            
+            <div className="space-y-0.5">
+              <span className="text-[8px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest block leading-none">
+                GÜVENLİK VE GİZLİLİK
+              </span>
+              <p className="text-[9px] text-slate-700 dark:text-slate-200 font-semibold leading-normal">
+                Girdiğiniz veriler sadece size özeldir. Tamamen tarayıcınızda (yerel olarak) işlenir; başka hiçbir kullanıcı ya da sunucu göremez.
+              </p>
+            </div>
           </div>
-          
-          <div className="space-y-0.5">
-            <span className="text-[8px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest block leading-none">
-              GÜVENLİK VE GİZLİLİK
-            </span>
-            <p className="text-[9px] text-slate-700 dark:text-slate-200 font-semibold leading-normal">
-              Girdiğiniz veriler sadece size özeldir. Tamamen tarayıcınızda (yerel olarak) işlenir; başka hiçbir kullanıcı ya da sunucu göremez.
-            </p>
-          </div>
-        </div>
+        )}
 
         {/* Signature */}
         <div className="opacity-60 hover:opacity-100 transition-all group translate-y-1 hover:translate-y-0 pl-1">
