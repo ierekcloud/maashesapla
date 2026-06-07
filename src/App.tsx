@@ -240,7 +240,6 @@ const initialMonthsStatic: MonthInput[] = Array(12)
     isMarried: false,
     spouseWorks: false,
     childCount: 0,
-    bysDeduction: false,
     bysManuel: 0,
     holidayBonusGross: 0,
     hasShuttle: false,
@@ -652,7 +651,6 @@ export default function App() {
           isMarried: activeData.isMarried,
           spouseWorks: activeData.spouseWorks,
           childCount: activeData.childCount,
-          bysDeduction: activeData.bysDeduction,
           bysManuel: activeData.bysManuel,
           holidayBonusGross: activeData.holidayBonusGross,
           hasHolidayBonus: activeData.hasHolidayBonus,
@@ -689,7 +687,6 @@ export default function App() {
         isMarried: false,
         spouseWorks: false,
         childCount: 0,
-        bysDeduction: false,
         bysManuel: 0,
         holidayBonusGross: 0,
         hasShuttle: false,
@@ -716,7 +713,6 @@ export default function App() {
         isMarried: false,
         spouseWorks: false,
         childCount: 0,
-        bysDeduction: false,
         bysManuel: 0,
         holidayBonusGross: 0,
         hasHolidayBonus: false,
@@ -731,7 +727,6 @@ export default function App() {
       }));
     setMonthsData(nw);
     setResults(calculateYear(nw, workerType));
-    setActiveMonth(0);
   };
 
   return (
@@ -1086,32 +1081,20 @@ export default function App() {
                             />
                           </div>
                         )}
+                      </div>
 
-                        <div className="flex items-center gap-4">
-                          <div className="flex-1">
-                            <ToggleField
-                              label="BYS KESİNTİSİ"
-                              value={monthsData[activeMonth].bysDeduction}
-                              onChange={(v) =>
-                                updateMonth(activeMonth, "bysDeduction", v)
-                              }
-                            />
-                          </div>
-                          <div
-                            className={cn(
-                              "w-32 transition-opacity",
-                              !monthsData[activeMonth].bysDeduction &&
-                                "opacity-30 pointer-events-none",
-                            )}
-                          >
-                            <InputField
-                              label="TUTAR"
-                              value={monthsData[activeMonth].bysManuel}
-                              onChange={(v) =>
-                                updateMonth(activeMonth, "bysManuel", v)
-                              }
-                            />
-                          </div>
+                      <div className="flex items-center gap-4 p-4 border border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800">
+                        <div className="flex-1 font-bold text-sm text-slate-700 dark:text-slate-300">
+                          BYS KESİNTİ TUTARI
+                        </div>
+                        <div className="w-32">
+                          <InputField
+                            label="TUTAR"
+                            value={monthsData[activeMonth].bysManuel}
+                            onChange={(v) =>
+                              updateMonth(activeMonth, "bysManuel", v)
+                            }
+                          />
                         </div>
                       </div>
                     </div>
@@ -1774,7 +1757,15 @@ export default function App() {
                             Servis Ücreti
                           </span>
                           <span className="text-[11px] xl:text-xs">
-                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">303</strong> TL'dir.
+                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">332,83</strong> TL'dir.
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-black text-rose-700 dark:text-rose-400 uppercase text-[10px] tracking-wider leading-none">
+                            İstanbul Tazminatı
+                          </span>
+                          <span className="text-[11px] xl:text-xs">
+                            Brüt maaşın <strong className="text-slate-950 dark:text-white font-black">yüzde 6</strong> alınır.
                           </span>
                         </div>
                       </div>

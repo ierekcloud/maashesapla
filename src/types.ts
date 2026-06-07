@@ -7,7 +7,6 @@ export interface MonthInput {
   isMarried: boolean;
   spouseWorks: boolean;
   childCount: number;
-  bysDeduction: boolean;
   bysManuel: number;
   holidayBonusGross: number;
   hasHolidayBonus?: boolean;

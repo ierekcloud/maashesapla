@@ -95,8 +95,8 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     const holidayGross = m.workerType === 'non-shift' ? 0 : ((m.holidayWorkHours || 0) * (DAILY_GROSS * 2.0)); 
     const ikramiyeGross = ((m.bonusDays || 0) * (DAILY_GROSS * 1.0)); 
     const vardiyaGross = m.shiftHours ? (m.shiftHours * (685.20 / 7.5)) : ((m.shiftDays || 0) * 685.20); 
-    const shuttleGross = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 303.38) : ((m.shiftDays || 0) * 303.38));
-    const istanbulGross = m.istanbulTazminati || 0;
+    const shuttleGross = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 332.83) : ((m.shiftDays || 0) * 332.83));
+    const istanbulGross = m.baseGross * 0.06;
     const additionalHolidayBonus = m.hasHolidayBonus ? 17875 : (m.holidayBonusGross || 0);
     
     // Non-Cash benefits target net values (Telekom specifications)
@@ -160,10 +160,10 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     dvBaseInput = totalGross - (300 * (m.yemekGun || 0));
     
     // Net shuttle value calculation if hasShuttle is true (EVET) - to prevent cash addition to net Paid
-    const sgkShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 303.38 * 0.15) : 0);
-    const taxShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? ((20 * 303.38 * 0.85) * marginalGV) : 0);
-    const stampShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 303.38 * 0.00759) : 0);
-    const netShuttle = (m.workerType !== 'non-shift' && m.hasShuttle) ? (20 * 303.38 - sgkShuttle - taxShuttle - stampShuttle) : 0;
+    const sgkShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 332.83 * 0.15) : ((m.shiftDays || 0) * 332.83 * 0.15));
+    const taxShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? ((20 * 332.83 * 0.85) * marginalGV) : (((m.shiftDays || 0) * 332.83) * marginalGV));
+    const stampShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 332.83 * 0.00759) : ((m.shiftDays || 0) * 332.83 * 0.00759));
+    const netShuttle = (m.workerType !== 'non-shift') ? (shuttleGross - sgkShuttle - taxShuttle - stampShuttle) : 0;
     
     return {
        totalGross, sgkEmployee, unemployment, totalSgk, gvBaseInput, dvBaseInput, taxObj,
@@ -208,7 +208,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     const legalNet = currDet.totalGross - totalLegalDeductions;
     
     // Private deductions (Non-cash reversed out)
-    const bysKesintisi = (data.bysDeduction ? (data.bysManuel || 0) : 0);
+    const bysKesintisi = (data.bysManuel || 0);
     const dernekKesintisi = (data.isDernekMember ? 150 : 0);
     const unionDuesDeduction = (data.isUnionMember ? (data.baseGross / 30) * 0.80 : 0);
     
