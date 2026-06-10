@@ -4,6 +4,7 @@ export interface MonthInput {
   shiftHours?: number;
   bonusDays: number;
   holidayWorkHours: number;
+  nationalHolidayDays?: number;
   isMarried: boolean;
   spouseWorks: boolean;
   childCount: number;

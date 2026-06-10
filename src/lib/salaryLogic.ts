@@ -93,6 +93,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     const DAILY_GROSS = m.baseGross / 30;
     const HOURLY_GROSS = DAILY_GROSS / 7.5;
     const holidayGross = m.workerType === 'non-shift' ? 0 : ((m.holidayWorkHours || 0) * (DAILY_GROSS * 2.0)); 
+    const nationalHolidayGross = m.workerType === 'non-shift' ? 0 : ((m.nationalHolidayDays || 0) * 7.5 * (m.baseGross / 225) * 1.5);
     const ikramiyeGross = ((m.bonusDays || 0) * (DAILY_GROSS * 1.0)); 
     const vardiyaGross = m.shiftHours ? (m.shiftHours * (685.20 / 7.5)) : ((m.shiftDays || 0) * 685.20); 
     const shuttleGross = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 332.83) : ((m.shiftDays || 0) * 332.83));
@@ -126,7 +127,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
 
     for(let i=0; i<3; i++) {
         // Recalculate with refined NBs
-        totalGross = m.baseGross + holidayGross + ikramiyeGross + vardiyaGross + shuttleGross + istanbulGross + additionalHolidayBonus
+        totalGross = m.baseGross + holidayGross + nationalHolidayGross + ikramiyeGross + vardiyaGross + shuttleGross + istanbulGross + additionalHolidayBonus
                            + nbPstnAdsl + nbYemek + nbHayat + nbSsyv + familyAllowanceGross + childAllowanceGross;
         
         let exemptFamilySGK = familyAllowanceGross > 0 ? Math.min(familyAllowanceGross, MIN_WAGE_GROSS_2025 * 0.10) : 0;

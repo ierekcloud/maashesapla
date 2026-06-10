@@ -237,6 +237,7 @@ const initialMonthsStatic: MonthInput[] = Array(12)
     shiftDays: 0,
     bonusDays: [2, 4, 6, 8, 10, 11].includes(i) ? (i === 11 ? 12 : 20) : 0,
     holidayWorkHours: 0,
+    nationalHolidayDays: 0,
     isMarried: false,
     spouseWorks: false,
     childCount: 0,
@@ -648,6 +649,7 @@ export default function App() {
           shiftDays: activeData.shiftDays,
           bonusDays: targetBonusDays,
           holidayWorkHours: activeData.holidayWorkHours,
+          nationalHolidayDays: activeData.nationalHolidayDays,
           isMarried: activeData.isMarried,
           spouseWorks: activeData.spouseWorks,
           childCount: activeData.childCount,
@@ -684,6 +686,7 @@ export default function App() {
         shiftDays: 0,
         bonusDays: defaultBonus,
         holidayWorkHours: 0,
+        nationalHolidayDays: 0,
         isMarried: false,
         spouseWorks: false,
         childCount: 0,
@@ -710,6 +713,7 @@ export default function App() {
         shiftDays: 0,
         bonusDays: (workerType === "shift" || workerType === "non-shift") && [2, 4, 6, 8, 10, 11].includes(i) ? (i === 11 ? 12 : 20) : 0,
         holidayWorkHours: 0,
+        nationalHolidayDays: 0,
         isMarried: false,
         spouseWorks: false,
         childCount: 0,
@@ -953,20 +957,29 @@ export default function App() {
                           <div className="p-3.5 bg-rose-500/[0.03] dark:bg-rose-500/[0.02] rounded-2xl border border-rose-500/10 dark:border-white/5 text-[11px] text-slate-600 dark:text-slate-400 font-medium leading-relaxed flex gap-2">
                             <span className="text-xs shrink-0 mt-0.5">⚠️</span>
                             <span>
-                              <strong>Vardiya & Bayram Notu:</strong> Resmi
+                              <strong>Vardiya & Bayram Notu:</strong> Resmi veya dini
                               bayram günlerinde çalıştıysanız, bu günleri{" "}
-                              <strong>"Bayram Mesai Günü"</strong> olarak ayrıca
+                              <strong>"Dini Bayramlar"</strong> veya <strong>"Milli Bayramlar"</strong> olarak ayrıca
                               belirtin ve normal <strong>"Vardiya Günü"</strong>{" "}
-                              sayısından düşerek giriş yapın.
+                              sayısından düşerek giriş yapın. <strong>Lütfen her birini ayrı ayrı girin, çünkü her kalemin hesaplaması farklı (gün/saat bazlı) yapılmaktadır.</strong>
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-1 gap-4">
+                          <div className="grid grid-cols-2 gap-4">
                             <InputField
-                              label="BAYRAM MESAİ GÜNÜ"
+                              label="DİNİ BAYRAMLAR"
                               value={monthsData[activeMonth].holidayWorkHours}
                               onChange={(v) =>
                                 updateMonth(activeMonth, "holidayWorkHours", v)
+                              }
+                              prefix=""
+                              suffix="GÜN"
+                            />
+                            <InputField
+                              label="MİLLİ BAYRAMLAR"
+                              value={monthsData[activeMonth].nationalHolidayDays || 0}
+                              onChange={(v) =>
+                                updateMonth(activeMonth, "nationalHolidayDays", v)
                               }
                               prefix=""
                               suffix="GÜN"
