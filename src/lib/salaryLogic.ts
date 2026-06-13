@@ -84,7 +84,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     }
   }
 
-  const getMonthlyDetails = (m: MonthInput, currentCumulativeTax: number) => {
+  const getMonthlyDetails = (m: MonthInput, currentCumulativeTax: number, monthIndex: number = 0) => {
     if (!m || m.baseGross === 0) {
       return { totalGross: 0, sgkEmployee: 0, unemployment: 0, totalSgk: 0,
                gvBaseInput: 0, dvBaseInput: 0, taxObj: { tax: 0, bracketRate: '15' },
@@ -95,7 +95,10 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     const holidayGross = m.workerType === 'non-shift' ? 0 : ((m.holidayWorkHours || 0) * (DAILY_GROSS * 2.0)); 
     const nationalHolidayGross = m.workerType === 'non-shift' ? 0 : ((m.nationalHolidayDays || 0) * 7.5 * (m.baseGross / 225) * 1.5);
     const ikramiyeGross = ((m.bonusDays || 0) * (DAILY_GROSS * 1.0)); 
-    const vardiyaGross = m.shiftHours ? (m.shiftHours * (685.20 / 7.5)) : ((m.shiftDays || 0) * 685.20); 
+    
+    const vardiyaRate = (monthIndex >= 8 && monthIndex <= 11) ? (685.20 * 1.08) : 685.20;
+    const vardiyaGross = m.shiftHours ? (m.shiftHours * (vardiyaRate / 7.5)) : ((m.shiftDays || 0) * vardiyaRate); 
+    
     const shuttleGross = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 332.83) : ((m.shiftDays || 0) * 332.83));
     const istanbulGross = m.baseGross * 0.06;
     const additionalHolidayBonus = m.hasHolidayBonus ? 17875 : (m.holidayBonusGross || 0);
@@ -175,7 +178,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
 
   for (let i = 0; i < 12; i++) {
     const data = months[i];
-    const effDet = getMonthlyDetails(effectiveMonths[i], cumulativeTaxBase);
+    const effDet = getMonthlyDetails(effectiveMonths[i], cumulativeTaxBase, i);
     const effGvBaseInput = effDet.gvBaseInput;
     
     // Dynamic Min Wage Exemption for current month
@@ -198,7 +201,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
       continue;
     }
 
-    const currDet = getMonthlyDetails(data, cumulativeTaxBase);
+    const currDet = getMonthlyDetails(data, cumulativeTaxBase, i);
     
     // Taxes
     const stampBefore = currDet.dvBaseInput * 0.00759;

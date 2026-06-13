@@ -131,13 +131,21 @@ const ToggleField = ({
   label,
   value,
   onChange,
+  compact = false,
 }: {
   label: string;
   value: boolean;
   onChange: (v: boolean) => void;
+  compact?: boolean;
 }) => (
-  <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-white/5 group hover:border-rose-500/30 transition-all">
-    <label className="text-[11px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">
+  <div className={cn(
+    "flex items-center justify-between bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-white/5 group hover:border-rose-500/30 transition-all",
+    compact ? "p-3" : "p-4"
+  )}>
+    <label className={cn(
+      "font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest",
+      compact ? "text-[10px]" : "text-[11px]"
+    )}>
       {label}
     </label>
     <button
@@ -162,14 +170,16 @@ const SegmentedControl = ({
   options,
   value,
   onChange,
+  compact = false,
 }: {
   label: string;
   options: { label: string; value: any }[];
   value: any;
   onChange: (v: any) => void;
+  compact?: boolean;
 }) => (
-  <div className="space-y-2">
-    <label className="text-[11px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest px-1">
+  <div className={cn("space-y-2", compact && "space-y-1")}>
+    <label className={cn("font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest px-1", compact ? "text-[10px]" : "text-[11px]")}>
       {label}
     </label>
     <div className="flex p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-white/5">
@@ -180,7 +190,8 @@ const SegmentedControl = ({
             key={String(opt.value)}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+              "flex-1 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+              compact ? "py-1.5" : "py-2",
               isActive
                 ? "bg-rose-600 text-white dark:bg-rose-500 dark:text-white shadow-sm font-extrabold"
                 : "text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-bold",
@@ -298,6 +309,7 @@ export default function App() {
   const [showSuggestionBox, setShowSuggestionBox] = useState(true);
   const [isMonthMenuOpen, setIsMonthMenuOpen] = useState(false);
   const [showAppliedFeedback, setShowAppliedFeedback] = useState(false);
+  const [showChildCount, setShowChildCount] = useState(true);
 
   const [workerType, setWorkerType] = useState<"shift" | "non-shift" | "shift-non-union" | null>(null);
 
@@ -768,8 +780,14 @@ export default function App() {
           </div>
         </div>
 
+        {/* Center the DateTimeWeatherWidget */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden xl:flex text-center pointer-events-none">
+          <div className="pointer-events-auto shadow-sm">
+            <DateTimeWeatherWidget />
+          </div>
+        </div>
+
         <div className="flex items-center gap-3">
-          <DateTimeWeatherWidget />
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
             className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white dark:bg-white/5 text-slate-500 dark:text-white/50 border border-slate-200 dark:border-white/10 hover:border-blue-500/50 transition-all shadow-sm"
@@ -915,13 +933,20 @@ export default function App() {
 
                       {(workerType === "shift" || workerType === "shift-non-union") && (
                         <div className="grid grid-cols-2 gap-4">
-                          <InputField
-                            label="VARDİYA GÜNÜ"
-                            value={monthsData[activeMonth].shiftDays}
-                            onChange={(v) => updateMonth(activeMonth, "shiftDays", v)}
-                            prefix=""
-                            suffix="GÜN"
-                          />
+                          <div>
+                            <InputField
+                              label="VARDİYA GÜNÜ"
+                              value={monthsData[activeMonth].shiftDays}
+                              onChange={(v) => updateMonth(activeMonth, "shiftDays", v)}
+                              prefix=""
+                              suffix="GÜN"
+                            />
+                            {activeMonth >= 8 && (
+                              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold px-1 mt-1 leading-tight">
+                                ℹ️ Vardiya saati ücretine (Eylül itibarıyla) %8 zam dahil edilmiştir.
+                              </div>
+                            )}
+                          </div>
                           {workerType === "shift" && (
                             <InputField
                               label={[2, 4, 6, 8, 10, 11].includes(activeMonth) ? "İKRAMİYE GÜN (BONUS AYI)" : "İKRAMİYE GÜN"}
@@ -954,14 +979,14 @@ export default function App() {
 
                       {workerType === "shift" && (
                         <>
-                          <div className="p-3.5 bg-rose-500/[0.03] dark:bg-rose-500/[0.02] rounded-2xl border border-rose-500/10 dark:border-white/5 text-[11px] text-slate-600 dark:text-slate-400 font-medium leading-relaxed flex gap-2">
-                            <span className="text-xs shrink-0 mt-0.5">⚠️</span>
+                          <div className="p-4 md:p-5 bg-rose-500/[0.08] dark:bg-rose-500/[0.05] rounded-2xl border-2 border-rose-500/20 dark:border-rose-500/20 text-[13px] md:text-sm text-rose-900 dark:text-rose-100 font-semibold leading-relaxed flex gap-3 shadow-sm">
+                            <span className="text-xl shrink-0 mt-0.5">⚠️</span>
                             <span>
-                              <strong>Vardiya & Bayram Notu:</strong> Resmi veya dini
-                              bayram günlerinde çalıştıysanız, bu günleri{" "}
-                              <strong>"Dini Bayramlar"</strong> veya <strong>"Milli Bayramlar"</strong> olarak ayrıca
-                              belirtin ve normal <strong>"Vardiya Günü"</strong>{" "}
-                              sayısından düşerek giriş yapın. <strong>Lütfen her birini ayrı ayrı girin, çünkü her kalemin hesaplaması farklı (gün/saat bazlı) yapılmaktadır.</strong>
+                              <strong className="text-rose-700 dark:text-rose-400 font-black text-sm md:text-base tracking-tight uppercase block mb-1.5">Vardiya & Bayram Notu</strong> 
+                              Resmi veya dini bayram günlerinde çalıştıysanız, bu günleri{" "}
+                              <strong className="text-rose-800 dark:text-rose-200">"Dini Bayramlar"</strong> veya <strong className="text-rose-800 dark:text-rose-200">"Milli Bayramlar"</strong> sekmesinde ayrıca
+                              belirtin ve normal <strong className="text-rose-800 dark:text-rose-200">"Vardiya Günü"</strong> sayısından düşerek giriş yapın. 
+                              <span className="text-rose-700 dark:text-rose-300 bg-rose-500/10 dark:bg-rose-500/20 mt-2 block p-2.5 rounded-xl border border-rose-500/10 font-bold">Lütfen her birini ayrı ayrı girin, çünkü her kalemin hesaplaması farklı (gün/saat bazlı) yapılmaktadır.</span>
                             </span>
                           </div>
 
@@ -1021,7 +1046,7 @@ export default function App() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 gap-3">
                         <SegmentedControl
                           label="MEDENİ DURUM"
                           options={[
@@ -1032,6 +1057,7 @@ export default function App() {
                           onChange={(v) =>
                             updateMonth(activeMonth, "isMarried", v)
                           }
+                          compact
                         />
                         <div
                           className={cn(
@@ -1050,6 +1076,7 @@ export default function App() {
                             onChange={(v) =>
                               updateMonth(activeMonth, "spouseWorks", v)
                             }
+                            compact
                           />
                         </div>
                       </div>
@@ -1061,29 +1088,65 @@ export default function App() {
                             "opacity-30 pointer-events-none",
                         )}
                       >
-                        <SegmentedControl
-                          label="ÇOCUK SAYISI"
-                          options={[
-                            { label: "YOK", value: 0 },
-                            { label: "1", value: 1 },
-                            { label: "2", value: 2 },
-                            { label: "3", value: 3 },
-                            { label: "4+", value: 4 },
-                          ]}
-                          value={monthsData[activeMonth].childCount}
-                          onChange={(v) =>
-                            updateMonth(activeMonth, "childCount", v)
-                          }
-                        />
+                          <button
+                            onClick={() => setShowChildCount(!showChildCount)}
+                            className={cn(
+                                "w-full flex items-center justify-between p-3 border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide hover:border-rose-400 transition-all",
+                                showChildCount ? "rounded-t-xl" : "rounded-xl"
+                            )}
+                          >
+                            <span>ÇOCUK SAYISI</span>
+                            <span className="font-extrabold text-rose-600 dark:text-rose-400">
+                              {monthsData[activeMonth].childCount === 0 ? "YOK" : monthsData[activeMonth].childCount} {showChildCount ? "▲" : "▼"}
+                            </span>
+                          </button>
+                          <AnimatePresence>
+                            {showChildCount && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden border border-t-0 rounded-b-xl border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800 p-2"
+                              >
+                                <div className="grid grid-cols-2 gap-2">
+                                  {[
+                                    { label: "YOK", value: 0 },
+                                    { label: "1", value: 1 },
+                                    { label: "2", value: 2 },
+                                    { label: "3", value: 3 },
+                                    { label: "4+", value: 4 },
+                                  ].map((opt, idx) => (
+                                    <button
+                                      key={opt.value}
+                                      onClick={() => {
+                                        updateMonth(activeMonth, "childCount", opt.value);
+                                        setShowChildCount(false);
+                                      }}
+                                      className={cn(
+                                        "py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all",
+                                        idx === 0 ? "col-span-2" : "col-span-1",
+                                        monthsData[activeMonth].childCount === opt.value
+                                          ? "bg-rose-600 text-white dark:bg-rose-500 shadow-sm"
+                                          : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600"
+                                      )}
+                                    >
+                                      {opt.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
 
                              {(workerType === "shift" || workerType === "non-shift") && (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 gap-3">
                             <ToggleField
                               label="TEKNİKER DERNEK ÜYE MİSİN ?"
                               value={monthsData[activeMonth].isDernekMember}
                               onChange={(v) =>
                                 updateMonth(activeMonth, "isDernekMember", v)
                               }
+                              compact
                             />
                             <ToggleField
                               label="SENDİKA ÜYELİĞİ"
@@ -1091,6 +1154,7 @@ export default function App() {
                               onChange={(v) =>
                                 updateMonth(activeMonth, "isUnionMember", v)
                               }
+                              compact
                             />
                           </div>
                         )}
@@ -1731,7 +1795,7 @@ export default function App() {
                           <span>
                             Saatlik Brüt{" "}
                             <strong className="text-slate-900 dark:text-white font-extrabold text-[13px]">
-                              91,36 ₺
+                              {activeMonth >= 8 ? "98,67 ₺" : "91,36 ₺"}
                             </strong>
                           </span>
                         </div>
