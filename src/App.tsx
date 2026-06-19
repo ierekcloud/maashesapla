@@ -1081,6 +1081,27 @@ export default function App() {
                         </div>
                       </div>
 
+                      {(workerType === "shift" || workerType === "non-shift") && (
+                          <div className="grid grid-cols-1 gap-3 mb-6">
+                            <ToggleField
+                              label="TEKNİKER DERNEK ÜYE MİSİN ?"
+                              value={monthsData[activeMonth].isDernekMember}
+                              onChange={(v) =>
+                                updateMonth(activeMonth, "isDernekMember", v)
+                              }
+                              compact
+                            />
+                            <ToggleField
+                              label="SENDİKA ÜYELİĞİ"
+                              value={monthsData[activeMonth].isUnionMember}
+                              onChange={(v) =>
+                                updateMonth(activeMonth, "isUnionMember", v)
+                              }
+                              compact
+                            />
+                          </div>
+                        )}
+
                       <div
                         className={cn(
                           "transition-opacity",
@@ -1138,26 +1159,6 @@ export default function App() {
                             )}
                           </AnimatePresence>
 
-                             {(workerType === "shift" || workerType === "non-shift") && (
-                          <div className="grid grid-cols-1 gap-3">
-                            <ToggleField
-                              label="TEKNİKER DERNEK ÜYE MİSİN ?"
-                              value={monthsData[activeMonth].isDernekMember}
-                              onChange={(v) =>
-                                updateMonth(activeMonth, "isDernekMember", v)
-                              }
-                              compact
-                            />
-                            <ToggleField
-                              label="SENDİKA ÜYELİĞİ"
-                              value={monthsData[activeMonth].isUnionMember}
-                              onChange={(v) =>
-                                updateMonth(activeMonth, "isUnionMember", v)
-                              }
-                              compact
-                            />
-                          </div>
-                        )}
                       </div>
 
                       <div className="flex items-center gap-4 p-4 border border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800">
