@@ -456,15 +456,18 @@ export default function App() {
 
   const activeResult = results[activeMonth];
   const activeYemekDays =
-    (monthsData[activeMonth]?.shiftDays || 0) +
-    (monthsData[activeMonth]?.holidayWorkHours || 0);
+    workerType === "non-shift"
+      ? ([0, 2, 4, 6, 7, 9, 11].includes(activeMonth) ? 22 : 20)
+      : (monthsData[activeMonth]?.shiftDays || 0) +
+        (monthsData[activeMonth]?.holidayWorkHours || 0);
   const activeYemekAmount = activeYemekDays * 550;
 
   const chartData = useMemo(() => {
     return results.map((r, i) => {
       const mInput = monthsData[i];
-      const mealDays =
-        (mInput?.shiftDays || 0) + (mInput?.holidayWorkHours || 0);
+      const mealDays = workerType === "non-shift"
+        ? ([0, 2, 4, 6, 7, 9, 11].includes(i) ? 22 : 20)
+        : (mInput?.shiftDays || 0) + (mInput?.holidayWorkHours || 0);
       const mealValue = mInput && mInput.baseGross > 0 ? mealDays * 550 : 0;
       return {
         name: shortMonths[i],
@@ -473,7 +476,7 @@ export default function App() {
         toplam: r.netPaid + mealValue,
       };
     });
-  }, [results, monthsData]);
+  }, [results, monthsData, workerType]);
 
   const handleWorkerTypeSelect = (type: "shift" | "non-shift" | "shift-non-union") => {
     setWorkerType(type);
@@ -596,8 +599,11 @@ export default function App() {
       const totalYemek = results.reduce((acc, r, i) => {
         const mInput = monthsData[i];
         if (!mInput || mInput.baseGross === 0) return acc;
+        const mealDays = workerType === "non-shift"
+          ? ([0, 2, 4, 6, 7, 9, 11].includes(i) ? 22 : 20)
+          : ((mInput.shiftDays || 0) + (mInput.holidayWorkHours || 0));
         return (
-          acc + ((mInput.shiftDays || 0) + (mInput.holidayWorkHours || 0)) * 550
+          acc + mealDays * 550
         );
       }, 0);
       const totalPackage = totalNet + totalYemek;
@@ -923,13 +929,20 @@ export default function App() {
 
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 gap-5">
-                      <InputField
-                        label="BRÜT MAAŞ"
-                        value={monthsData[activeMonth].baseGross}
-                        onChange={(v) =>
-                          updateMonth(activeMonth, "baseGross", v)
-                        }
-                      />
+                      <div>
+                        <InputField
+                          label="BRÜT MAAŞ"
+                          value={monthsData[activeMonth].baseGross}
+                          onChange={(v) =>
+                            updateMonth(activeMonth, "baseGross", v)
+                          }
+                        />
+                        {workerType === "non-shift" && activeMonth >= 8 && (
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold px-1 mt-1 leading-tight">
+                            ℹ️ Brüt Maaşa (Eylül itibarıyla) %8 zam dahil edilmiştir.
+                          </div>
+                        )}
+                      </div>
 
                       {(workerType === "shift" || workerType === "shift-non-union") && (
                         <div className="grid grid-cols-2 gap-4">
@@ -1181,7 +1194,7 @@ export default function App() {
 
                 {/* MIDDLE: Results & Net Payment */}
                 <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-slate-950/45 lg:order-none order-3">
-                  {workerType === "shift" &&
+                  {(workerType === "shift" || workerType === "non-shift") &&
                     [2, 4, 6, 8, 10, 11].includes(activeMonth) && (
                       <div className="bg-gradient-to-r from-orange-500/[0.08] to-amber-500/[0.04] dark:from-orange-500/[0.06] dark:to-transparent border border-orange-500/20 dark:border-orange-500/30 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
                         <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
@@ -1730,7 +1743,7 @@ export default function App() {
                               "text-[12px] font-black uppercase tracking-widest transition-colors leading-none mb-1",
                               isActive
                                 ? "text-white"
-                                : workerType === "shift" &&
+                                : (workerType === "shift" || workerType === "non-shift") &&
                                     [2, 4, 6, 8, 10, 11].includes(i)
                                   ? "text-orange-500"
                                   : "",
@@ -1759,7 +1772,7 @@ export default function App() {
                               )}
                             />
                           )}
-                          {workerType === "shift" &&
+                          {(workerType === "shift" || workerType === "non-shift") &&
                             [2, 4, 6, 8, 10, 11].includes(i) && (
                               <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)] animate-pulse" />
                             )}
@@ -1850,6 +1863,67 @@ export default function App() {
                     </div>
                   )}
 
+                  {workerType === "non-shift" && (
+                    <div className="mt-4 p-5 xl:p-6 bg-rose-500/[0.04] dark:bg-rose-500/[0.03] rounded-[1.5rem] border border-rose-500/20 space-y-5 shadow-sm">
+                      <div className="flex items-center gap-2.5 pb-2.5 border-b border-rose-500/10 dark:border-white/5">
+                        <div className="w-6 h-6 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                          <Info size={14} strokeWidth={2.5} />
+                        </div>
+                        <span className="text-[11px] xl:text-[12px] font-black text-rose-800 dark:text-rose-400 uppercase tracking-widest leading-none">
+                          HESAPLAMA METOTLARI
+                        </span>
+                      </div>
+                      <div className="space-y-3.5 text-[11px] xl:text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-black text-rose-700 dark:text-rose-400 uppercase text-[10px] tracking-wider leading-none">
+                            Yemek Ücreti
+                          </span>
+                          <span>
+                            Gün. Net{" "}
+                            <strong className="text-slate-900 dark:text-white font-extrabold text-[13px]">
+                              550,00 ₺
+                            </strong>
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-black text-rose-700 dark:text-rose-400 uppercase text-[10px] tracking-wider leading-none">
+                            Bayram Parası
+                          </span>
+                          <span>
+                            Brüt{" "}
+                            <strong className="text-slate-900 dark:text-white font-extrabold text-[13px]">
+                              17.875,00 ₺
+                            </strong>
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-black text-rose-700 dark:text-rose-400 uppercase text-[10px] tracking-wider leading-none">
+                            Sendika Aidatı
+                          </span>
+                          <span className="text-[11px] xl:text-xs">
+                            1 günlük brüt maaşın <strong className="text-slate-950 dark:text-white font-black">yüzde 80</strong> alınır.
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-black text-rose-700 dark:text-rose-400 uppercase text-[10px] tracking-wider leading-none">
+                            Servis Ücreti
+                          </span>
+                          <span className="text-[11px] xl:text-xs">
+                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">332,83</strong> TL'dir.
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-black text-rose-700 dark:text-rose-400 uppercase text-[10px] tracking-wider leading-none">
+                            İstanbul Tazminatı
+                          </span>
+                          <span className="text-[11px] xl:text-xs">
+                            Brüt maaşın <strong className="text-slate-950 dark:text-white font-black">yüzde 6</strong> alınır.
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Yıllık Özet */}
                   <div className="mt-4 p-5 bg-blue-600/[0.04] dark:bg-blue-400/[0.04] rounded-[1.5rem] border border-blue-500/10 shadow-sm space-y-4">
                     <div className="flex items-center gap-2.5 pb-2.5 border-b border-blue-500/10 dark:border-white/5">
@@ -1878,11 +1952,11 @@ export default function App() {
                             results.reduce((acc, r, i) => {
                               const mInput = monthsData[i];
                               if (!mInput || mInput.baseGross === 0) return acc;
+                              const mealDays = workerType === "non-shift"
+                                ? ([0, 2, 4, 6, 7, 9, 11].includes(i) ? 22 : 20)
+                                : ((mInput.shiftDays || 0) + (mInput.holidayWorkHours || 0));
                               return (
-                                acc +
-                                ((mInput.shiftDays || 0) +
-                                  (mInput.holidayWorkHours || 0)) *
-                                  550
+                                acc + mealDays * 550
                               );
                             }, 0),
                           )}
@@ -1899,11 +1973,11 @@ export default function App() {
                                 const mInput = monthsData[i];
                                 if (!mInput || mInput.baseGross === 0)
                                   return acc;
+                                const mealDays = workerType === "non-shift"
+                                  ? ([0, 2, 4, 6, 7, 9, 11].includes(i) ? 22 : 20)
+                                  : ((mInput.shiftDays || 0) + (mInput.holidayWorkHours || 0));
                                 return (
-                                  acc +
-                                  ((mInput.shiftDays || 0) +
-                                    (mInput.holidayWorkHours || 0)) *
-                                    550
+                                  acc + mealDays * 550
                                 );
                               }, 0),
                           )}
@@ -1932,11 +2006,11 @@ export default function App() {
                                   const mInput = monthsData[i];
                                   if (!mInput || mInput.baseGross === 0)
                                     return acc;
+                                  const mealDays = workerType === "non-shift"
+                                    ? ([0, 2, 4, 6, 7, 9, 11].includes(i) ? 22 : 20)
+                                    : ((mInput.shiftDays || 0) + (mInput.holidayWorkHours || 0));
                                   return (
-                                    acc +
-                                    ((mInput.shiftDays || 0) +
-                                      (mInput.holidayWorkHours || 0)) *
-                                      550
+                                    acc + mealDays * 550
                                   );
                                 }, 0)) /
                                 12,

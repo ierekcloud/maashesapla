@@ -51,20 +51,31 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
   const results: SalaryResult[] = [];
   
   // Create effective months for cumulative tax base simulation
-  const effectiveMonths: MonthInput[] = months.map(m => ({
-    ...m,
-    workerType: selectedWorkerType || m.workerType || 'shift'
-  }));
+  const effectiveMonths: MonthInput[] = months.map((m, i) => {
+    const is31DayMonth = [0, 2, 4, 6, 7, 9, 11].includes(i);
+    const workerTypeResolved = selectedWorkerType || m.workerType || 'shift';
+    const resolvedYemekGun = workerTypeResolved === 'non-shift'
+      ? (is31DayMonth ? 22 : 20)
+      : (m.yemekGun || 21);
+    return {
+      ...m,
+      workerType: workerTypeResolved,
+      yemekGun: resolvedYemekGun
+    };
+  });
   const firstIdx = effectiveMonths.findIndex(m => m.baseGross > 0);
   if (firstIdx > -1) {
     for (let i = 0; i < firstIdx; i++) {
+      const is31DayMonth = [0, 2, 4, 6, 7, 9, 11].includes(i);
       effectiveMonths[i] = { 
         ...effectiveMonths[firstIdx],
         holidayWorkHours: 0,
         bonusDays: 0,
         hasHolidayBonus: false,
         holidayBonusGross: 0,
-        yemekGun: 22
+        yemekGun: effectiveMonths[firstIdx].workerType === 'non-shift'
+          ? (is31DayMonth ? 22 : 20)
+          : 22
       };
     }
   }
@@ -73,13 +84,16 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     if (effectiveMonths[i].baseGross > 0) {
       lastVal = effectiveMonths[i];
     } else {
+      const is31DayMonth = [0, 2, 4, 6, 7, 9, 11].includes(i);
       effectiveMonths[i] = { 
         ...lastVal,
         holidayWorkHours: 0,
         bonusDays: 0,
         hasHolidayBonus: false,
         holidayBonusGross: 0,
-        yemekGun: 22
+        yemekGun: lastVal.workerType === 'non-shift'
+          ? (is31DayMonth ? 22 : 20)
+          : 22
       };
     }
   }
@@ -90,23 +104,32 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
                gvBaseInput: 0, dvBaseInput: 0, taxObj: { tax: 0, bracketRate: '15' },
                nonCashNT: 0, childAllowanceGross: 0, familyAllowanceGross: 0 };
     }
-    const DAILY_GROSS = m.baseGross / 30;
+    const effectiveBaseGross = (m.workerType === 'non-shift' && monthIndex >= 8 && monthIndex <= 11)
+      ? m.baseGross * 1.08
+      : m.baseGross;
+
+    const DAILY_GROSS = effectiveBaseGross / 30;
     const HOURLY_GROSS = DAILY_GROSS / 7.5;
     const holidayGross = m.workerType === 'non-shift' ? 0 : ((m.holidayWorkHours || 0) * (DAILY_GROSS * 2.0)); 
-    const nationalHolidayGross = m.workerType === 'non-shift' ? 0 : ((m.nationalHolidayDays || 0) * 7.5 * (m.baseGross / 225) * 1.5);
+    const nationalHolidayGross = m.workerType === 'non-shift' ? 0 : ((m.nationalHolidayDays || 0) * 7.5 * (effectiveBaseGross / 225) * 1.5);
     const ikramiyeGross = ((m.bonusDays || 0) * (DAILY_GROSS * 1.0)); 
     
     const vardiyaRate = (monthIndex >= 8 && monthIndex <= 11) ? (685.20 * 1.08) : 685.20;
     const vardiyaGross = m.shiftHours ? (m.shiftHours * (vardiyaRate / 7.5)) : ((m.shiftDays || 0) * vardiyaRate); 
     
     const shuttleGross = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 332.83) : ((m.shiftDays || 0) * 332.83));
-    const istanbulGross = m.baseGross * 0.06;
+    const istanbulGross = effectiveBaseGross * 0.06;
     const additionalHolidayBonus = m.hasHolidayBonus ? 17875 : (m.holidayBonusGross || 0);
     
+    const is31DayMonth = [0, 2, 4, 6, 7, 9, 11].includes(monthIndex);
+    const yemekGunEff = m.workerType === 'non-shift'
+      ? (is31DayMonth ? 22 : 20)
+      : (m.yemekGun || 0);
+
     // Non-Cash benefits target net values (Telekom specifications)
-    // Only applied if we assume it's a shifted / telekom user... we will apply if yemekGun > 0 or istanbul > 0
-    const hasYanHaklar = (m.yemekGun || 0) > 0 || (m.istanbulTazminati || 0) > 0;
-    const targetYemekNt = (m.yemekGun || 0) * 550;
+    // Only applied if we assume it's a shifted / telekom user... we will apply if yemekGunEff > 0 or istanbul > 0
+    const hasYanHaklar = yemekGunEff > 0 || (m.istanbulTazminati || 0) > 0;
+    const targetYemekNt = yemekGunEff * 550;
     const targetPstnAdslNt = hasYanHaklar ? (128.99 + 522.86) : 0;
     const targetSsyvNt = hasYanHaklar ? 2769.75 : 0;
     const targetHayatNt = hasYanHaklar ? 86.58 : 0;
@@ -120,7 +143,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
 
     let marginalGV = 0.20; 
     let nbPstnAdsl = targetPstnAdslNt / (1 - marginalGV - 0.00759);
-    let yemekNominator = targetYemekNt - 300 * (m.yemekGun || 0) * (marginalGV + 0.00759);
+    let yemekNominator = targetYemekNt - 300 * yemekGunEff * (marginalGV + 0.00759);
     let nbYemek = yemekNominator > 0 ? (yemekNominator / (1 - marginalGV - 0.00759)) : targetYemekNt;
     if (nbYemek < targetYemekNt) nbYemek = targetYemekNt; 
     let nbHayat = targetHayatNt / (1 - 0.15 - 0.00759);
@@ -130,7 +153,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
 
     for(let i=0; i<3; i++) {
         // Recalculate with refined NBs
-        totalGross = m.baseGross + holidayGross + nationalHolidayGross + ikramiyeGross + vardiyaGross + shuttleGross + istanbulGross + additionalHolidayBonus
+        totalGross = effectiveBaseGross + holidayGross + nationalHolidayGross + ikramiyeGross + vardiyaGross + shuttleGross + istanbulGross + additionalHolidayBonus
                            + nbPstnAdsl + nbYemek + nbHayat + nbSsyv + familyAllowanceGross + childAllowanceGross;
         
         let exemptFamilySGK = familyAllowanceGross > 0 ? Math.min(familyAllowanceGross, MIN_WAGE_GROSS_2025 * 0.10) : 0;
@@ -143,9 +166,9 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
         totalSgk = sgkEmployee + unemployment;
         
         gvBaseInput = totalGross - totalSgk;
-        if (m.workerType !== 'non-shift' && m.isUnionMember) gvBaseInput -= (m.baseGross / 30) * 0.80; 
+        if (m.workerType !== 'non-shift' && m.isUnionMember) gvBaseInput -= (effectiveBaseGross / 30) * 0.80; 
         if (hasYanHaklar) gvBaseInput -= 86.58; // Hayat GV istisna
-        gvBaseInput -= (296.59 * (m.yemekGun || 0)); // Yemek GV istisna
+        gvBaseInput -= (296.59 * yemekGunEff); // Yemek GV istisna
         if (gvBaseInput < 0) gvBaseInput = 0;
 
         taxObj = calculateIncomeTax(gvBaseInput, currentCumulativeTax);
@@ -155,13 +178,13 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
         
         // Refine NBs
         nbPstnAdsl = targetPstnAdslNt / (1 - marginalGV - 0.00759);
-        let nYemek = targetYemekNt - 300 * (m.yemekGun || 0) * (marginalGV + 0.00759);
+        let nYemek = targetYemekNt - 300 * yemekGunEff * (marginalGV + 0.00759);
         nbYemek = nYemek > 0 ? (nYemek / (1 - marginalGV - 0.00759)) : targetYemekNt;
         if (nbYemek < targetYemekNt) nbYemek = targetYemekNt;
         nbSsyv = targetSsyvNt / (1 - 0.15 - (marginalGV * 0.85) - 0.00759);
     }
 
-    dvBaseInput = totalGross - (300 * (m.yemekGun || 0));
+    dvBaseInput = totalGross - (300 * yemekGunEff);
     
     // Net shuttle value calculation if hasShuttle is true (EVET) - to prevent cash addition to net Paid
     const sgkShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 332.83 * 0.15) : ((m.shiftDays || 0) * 332.83 * 0.15));
@@ -214,7 +237,10 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     // Private deductions (Non-cash reversed out)
     const bysKesintisi = (data.bysManuel || 0);
     const dernekKesintisi = (data.isDernekMember ? 150 : 0);
-    const unionDuesDeduction = (data.isUnionMember ? (data.baseGross / 30) * 0.80 : 0);
+    const effectiveBaseGrossMain = (data.workerType === 'non-shift' && i >= 8 && i <= 11)
+      ? data.baseGross * 1.08
+      : data.baseGross;
+    const unionDuesDeduction = (data.isUnionMember ? (effectiveBaseGrossMain / 30) * 0.80 : 0);
     
     // Total non-cash reverse + standard private deductions
     const nonCashBenefitDeduction = currDet.nonCashNT + bysKesintisi + dernekKesintisi + unionDuesDeduction;
