@@ -117,7 +117,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     const vardiyaRate = (monthIndex >= 8 && monthIndex <= 11) ? (685.20 * 1.08) : 685.20;
     const vardiyaGross = m.shiftHours ? (m.shiftHours * (vardiyaRate / 7.5)) : ((m.shiftDays || 0) * vardiyaRate); 
     
-    const shuttleGross = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 332.83) : ((m.shiftDays || 0) * 332.83));
+    const shuttleGross = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? ((m.shiftDays || 0) * 332.83) : (20 * 332.83));
     const istanbulGross = effectiveBaseGross * 0.06;
     const additionalHolidayBonus = m.hasHolidayBonus ? 17875 : (m.holidayBonusGross || 0);
     
@@ -187,9 +187,9 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     dvBaseInput = totalGross - (300 * yemekGunEff);
     
     // Net shuttle value calculation if hasShuttle is true (EVET) - to prevent cash addition to net Paid
-    const sgkShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 332.83 * 0.15) : ((m.shiftDays || 0) * 332.83 * 0.15));
-    const taxShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? ((20 * 332.83 * 0.85) * marginalGV) : (((m.shiftDays || 0) * 332.83) * marginalGV));
-    const stampShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (20 * 332.83 * 0.00759) : ((m.shiftDays || 0) * 332.83 * 0.00759));
+    const sgkShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? ((m.shiftDays || 0) * 332.83 * 0.15) : (20 * 332.83 * 0.15));
+    const taxShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? (((m.shiftDays || 0) * 332.83) * marginalGV) : ((20 * 332.83 * 0.85) * marginalGV));
+    const stampShuttle = m.workerType === 'non-shift' ? 0 : (m.hasShuttle ? ((m.shiftDays || 0) * 332.83 * 0.00759) : (20 * 332.83 * 0.00759));
     const netShuttle = (m.workerType !== 'non-shift') ? (shuttleGross - sgkShuttle - taxShuttle - stampShuttle) : 0;
     
     return {

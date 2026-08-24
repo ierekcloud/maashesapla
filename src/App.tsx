@@ -1076,7 +1076,7 @@ export default function App() {
                           className={cn(
                             "transition-opacity",
                             !monthsData[activeMonth].isMarried &&
-                              "opacity-30 pointer-events-none",
+                              "opacity-30",
                           )}
                         >
                           <SegmentedControl
@@ -1086,9 +1086,10 @@ export default function App() {
                               { label: "ÇALIŞMIYOR", value: false },
                             ]}
                             value={monthsData[activeMonth].spouseWorks}
-                            onChange={(v) =>
-                              updateMonth(activeMonth, "spouseWorks", v)
-                            }
+                            onChange={(v) => {
+                              updateMonth(activeMonth, "spouseWorks", v);
+                              updateMonth(activeMonth, "isMarried", true);
+                            }}
                             compact
                           />
                         </div>
@@ -1115,13 +1116,7 @@ export default function App() {
                           </div>
                         )}
 
-                      <div
-                        className={cn(
-                          "transition-opacity",
-                          !monthsData[activeMonth].isMarried &&
-                            "opacity-30 pointer-events-none",
-                        )}
-                      >
+                      <div>
                           <button
                             onClick={() => setShowChildCount(!showChildCount)}
                             className={cn(
