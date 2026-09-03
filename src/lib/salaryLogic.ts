@@ -123,7 +123,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     const effShuttleDays = m.workerType === 'non-shift'
       ? 0
       : (m.hasShuttle ? 13 : ((m.shiftDays && m.shiftDays > 0) ? m.shiftDays : (m.shuttleDays || 20)));
-    const shuttleGross = effShuttleDays * 332.83;
+    const shuttleGross = effShuttleDays * 362.85;
     const istanbulGross = effectiveBaseGross * 0.06;
     const additionalHolidayBonus = m.hasHolidayBonus ? 17875 : (m.holidayBonusGross || 0);
     
