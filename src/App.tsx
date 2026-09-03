@@ -1841,7 +1841,7 @@ export default function App() {
                             Servis Ücreti
                           </span>
                           <span className="text-[11px] xl:text-xs">
-                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">332,83</strong> TL'dir. Servis kullanan kişi 13 günlük, servis kullanmayan kişi ise vardiya gün sayısı kadar alır.
+                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">362,85</strong> TL'dir. Servis kullanan kişi 13 günlük, servis kullanmayan kişi ise vardiya gün sayısı kadar alır.
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
