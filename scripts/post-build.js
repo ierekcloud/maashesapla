@@ -97,6 +97,7 @@ if (bodyPos !== -1) {
 
 // Write the compiled file to destinations
 const BOM = '\uFEFF';
+fs.writeFileSync(distPath, BOM + html, 'utf8');
 fs.writeFileSync(outputPath, BOM + html, 'utf8');
 fs.writeFileSync(rootOutputPath, BOM + html, 'utf8');
-console.log('Successfully prepared public/dist-app.html and root Maas_Hesapla.html!');
+console.log('Successfully prepared dist/index.html, public/dist-app.html and root Maas_Hesapla.html!');

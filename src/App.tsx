@@ -954,20 +954,18 @@ export default function App() {
                               prefix=""
                               suffix="GÜN"
                             />
-                            {activeMonth >= 8 && (
-                              <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold px-1 mt-1 leading-tight">
-                                ℹ️ Vardiya saati ücretine (Eylül itibarıyla) %8 zam dahil edilmiştir.
-                              </div>
-                            )}
                           </div>
                           {workerType === "shift" && (
-                            <InputField
-                              label={[2, 4, 6, 8, 10, 11].includes(activeMonth) ? "İKRAMİYE GÜN (BONUS AYI)" : "İKRAMİYE GÜN"}
-                              value={monthsData[activeMonth].bonusDays}
-                              onChange={(v) => updateMonth(activeMonth, "bonusDays", v)}
-                              prefix=""
-                              suffix="GÜN"
-                            />
+                            <div>
+                              <InputField
+                                label={[2, 4, 6, 8, 10, 11].includes(activeMonth) ? "İKRAMİYE GÜN (BONUS AYI)" : "İKRAMİYE GÜN"}
+                                value={monthsData[activeMonth].bonusDays}
+                                onChange={(v) => updateMonth(activeMonth, "bonusDays", v)}
+                                prefix=""
+                                suffix="GÜN"
+                                isHighlight={[2, 4, 6, 8, 10, 11].includes(activeMonth)}
+                              />
+                            </div>
                           )}
                         </div>
                       )}
@@ -982,11 +980,6 @@ export default function App() {
                             suffix="GÜN"
                             isHighlight={[2, 4, 6, 8, 10, 11].includes(activeMonth)}
                           />
-                          {[2, 4, 6, 8, 10, 11].includes(activeMonth) && (
-                            <div className="text-[10px] text-amber-700 dark:text-amber-400 font-bold px-1 mt-1">
-                              ₺ Bu ay ikramiye alacaksın.
-                            </div>
-                          )}
                         </div>
                       )}
 
@@ -1195,8 +1188,13 @@ export default function App() {
                         <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
                           <Gift size={16} className="animate-pulse" />
                         </div>
-                        <span className="text-[11px] font-black text-orange-850 dark:text-orange-450 uppercase tracking-widest leading-none flex items-center gap-1.5">
-                          BU AY İKRAMİYE ALACAKSIN 💰
+                        <span className="text-[11px] font-black text-orange-850 dark:text-orange-450 uppercase tracking-widest leading-none flex flex-wrap items-center gap-1.5">
+                          <span>BU AY İKRAMİYE ALACAKSIN 💰</span>
+                          {activeMonth === 8 && (
+                            <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 normal-case tracking-normal">
+                              (Bu aydan geçerli yüzde 8 zam tüm kalemlere eklenmiştir)
+                            </span>
+                          )}
                         </span>
                       </div>
                     )}
@@ -1843,7 +1841,7 @@ export default function App() {
                             Servis Ücreti
                           </span>
                           <span className="text-[11px] xl:text-xs">
-                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">332,83</strong> TL'dir.
+                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">332,83</strong> TL'dir. Servis kullanan kişi 13 günlük, servis kullanmayan kişi ise vardiya gün sayısı kadar alır.
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
