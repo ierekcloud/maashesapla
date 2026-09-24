@@ -906,6 +906,12 @@ export default function App() {
                     </span>
                   </button>
                 </div>
+
+                <div className="mt-10 flex items-center justify-center gap-2 text-slate-400 dark:text-slate-500 text-xs font-bold tracking-widest uppercase">
+                  <span>Versiyon 2.5</span>
+                  <span>•</span>
+                  <span>2026</span>
+                </div>
               </motion.div>
             )}
 
@@ -944,9 +950,9 @@ export default function App() {
                             updateMonth(activeMonth, "baseGross", v)
                           }
                         />
-                        {workerType === "non-shift" && activeMonth >= 8 && (
+                        {(workerType === "shift" || workerType === "non-shift") && activeMonth >= 8 && (
                           <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold px-1 mt-1 leading-tight">
-                            ℹ️ Brüt Maaşa (Eylül itibarıyla) %8 zam dahil edilmiştir.
+                            ℹ️ Brüt Maaşa Eylül itibarıyla %8 zam dahil edilmiştir.
                           </div>
                         )}
                       </div>
@@ -1353,18 +1359,13 @@ export default function App() {
                             Vardiya Primi Hesabı
                           </h5>
                           <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-                            Brüt ücretinizin saatlik karşılığı üzerinden{" "}
-                            <span className="text-slate-900 dark:text-white font-bold">
-                              %24.66
-                            </span>{" "}
-                            oranında prim hesaplanır.
+                            Vardiya tazminatı saatlik olarak hesaplanır:
                             <br />
+                            • <span className="text-slate-900 dark:text-white font-bold">Ocak - Şubat:</span> 73,67 ₺ / saat · Günlük 552,53 ₺
                             <br />
-                            187.5 saatlik vardiya mesaisi{" "}
-                            <span className="text-slate-900 dark:text-white font-bold">
-                              25 vardiya gününe
-                            </span>{" "}
-                            denk gelmektedir.
+                            • <span className="text-slate-900 dark:text-white font-bold">Mart - Ağustos:</span> 91,36 ₺ / saat · Günlük 685,20 ₺
+                            <br />
+                            • <span className="text-slate-900 dark:text-white font-bold">Eylül - Aralık:</span> 98,67 ₺ / saat · Günlük 740,02 ₺
                           </p>
                         </div>
                         <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
@@ -1374,10 +1375,9 @@ export default function App() {
                           <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                             Günlük brüt{" "}
                             <span className="text-slate-900 dark:text-white font-bold">
-                              303.39 TL
+                              362,85 TL
                             </span>{" "}
-                            olarak tanımlanmıştır. Çalıştığınız gün sayısı ile
-                            çarpılarak brüt toplama eklenir.
+                            olarak tanımlanmıştır. Servis kullananlar sabit 13 günlük, kullanmayanlar fiili vardiya gün sayısı kadar alır.
                           </p>
                         </div>
                       </div>
@@ -1845,7 +1845,7 @@ export default function App() {
                     <span className="inline">TÜM AYLARI TEMİZLE</span>
                   </button>
 
-                  {workerType === "shift" && (
+                    {workerType === "shift" && (
                     <div className="mt-4 p-5 xl:p-6 bg-rose-500/[0.04] dark:bg-rose-500/[0.03] rounded-[1.5rem] border border-rose-500/20 space-y-5 shadow-sm">
                       <div className="flex items-center gap-2.5 pb-2.5 border-b border-rose-500/10 dark:border-white/5">
                         <div className="w-6 h-6 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
@@ -1863,7 +1863,21 @@ export default function App() {
                           <span>
                             Saatlik Brüt{" "}
                             <strong className="text-slate-900 dark:text-white font-extrabold text-[13px]">
-                              {activeMonth >= 8 ? "98,67 ₺" : "91,36 ₺"}
+                              {activeMonth <= 1 ? "73,67 ₺" : activeMonth >= 8 ? "98,67 ₺" : "91,36 ₺"}
+                            </strong>
+                            <span className="text-[10px] text-slate-500 block">
+                              {activeMonth <= 1 ? "Günlük: 552,53 ₺" : activeMonth >= 8 ? "Günlük: 740,02 ₺" : "Günlük: 685,20 ₺"}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="font-black text-rose-700 dark:text-rose-400 uppercase text-[10px] tracking-wider leading-none">
+                            Milli / Resmi Tatil Ücreti
+                          </span>
+                          <span>
+                            Günlük Brüt{" "}
+                            <strong className="text-slate-900 dark:text-white font-extrabold text-[13px]">
+                              {activeMonth <= 1 ? "482,53 ₺" : activeMonth >= 8 ? "646,27 ₺" : "598,40 ₺"}
                             </strong>
                           </span>
                         </div>
@@ -1902,7 +1916,7 @@ export default function App() {
                             Servis Ücreti
                           </span>
                           <span className="text-[11px] xl:text-xs">
-                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">362,85</strong> TL'dir. Servis kullanan kişi 13 günlük, servis kullanmayan kişi ise vardiya gün sayısı kadar alır.
+                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">{activeMonth <= 1 ? "237,75" : "362,85"}</strong> TL'dir. Servis kullanan kişi 13 günlük, servis kullanmayan kişi ise vardiya gün sayısı kadar alır.
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -1910,7 +1924,7 @@ export default function App() {
                             İstanbul Tazminatı
                           </span>
                           <span className="text-[11px] xl:text-xs">
-                            Brüt maaşın <strong className="text-slate-950 dark:text-white font-black">yüzde 6</strong> alınır.
+                            Brüt maaşın <strong className="text-slate-950 dark:text-white font-black">yüzde 6 sı eklenir.</strong>
                           </span>
                         </div>
                       </div>
@@ -1933,11 +1947,10 @@ export default function App() {
                             Yemek Ücreti
                           </span>
                           <span>
-                            Aylık Sabit 21 Gün (Gün. Net{" "}
+                            Aylık Sabit 21 Gün · Günlük Net{" "}
                             <strong className="text-slate-900 dark:text-white font-extrabold text-[13px]">
                               550,00 ₺
                             </strong>
-                            )
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -1964,7 +1977,7 @@ export default function App() {
                             Servis Ücreti
                           </span>
                           <span className="text-[11px] xl:text-xs">
-                            Sabit servis kullanan olarak <strong className="text-slate-950 dark:text-white font-black">13 günlük brüt (13 × 362,85 TL = 4.717,05 TL)</strong> hesaplamaya otomatik dahil edilir.
+                            Sabit servis kullanan olarak <strong className="text-slate-950 dark:text-white font-black">{activeMonth <= 1 ? "13 günlük brüt 3.090,75 TL" : "13 günlük brüt 4.717,05 TL"}</strong> hesaplamaya otomatik dahil edilir.
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -1972,7 +1985,7 @@ export default function App() {
                             İstanbul Tazminatı
                           </span>
                           <span className="text-[11px] xl:text-xs">
-                            Brüt maaşın <strong className="text-slate-950 dark:text-white font-black">yüzde 6</strong> alınır.
+                            Brüt maaşın <strong className="text-slate-950 dark:text-white font-black">yüzde 6 sı eklenir.</strong>
                           </span>
                         </div>
                       </div>

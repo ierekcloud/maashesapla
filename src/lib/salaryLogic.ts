@@ -54,9 +54,10 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
   const effectiveMonths: MonthInput[] = months.map((m, i) => {
     const is31DayMonth = [0, 2, 4, 6, 7, 9, 11].includes(i);
     const workerTypeResolved = selectedWorkerType || m.workerType || 'shift';
+    const actualShiftMealDays = ((m.shiftDays || 0) + (m.holidayWorkHours || 0));
     const resolvedYemekGun = workerTypeResolved === 'non-shift'
       ? 21
-      : (m.yemekGun || 21);
+      : (actualShiftMealDays > 0 ? actualShiftMealDays : (m.yemekGun || 21));
     return {
       ...m,
       workerType: workerTypeResolved,
@@ -104,33 +105,61 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
                gvBaseInput: 0, dvBaseInput: 0, taxObj: { tax: 0, bracketRate: '15' },
                nonCashNT: 0, childAllowanceGross: 0, familyAllowanceGross: 0 };
     }
-    const effectiveBaseGross = (m.workerType === 'non-shift' && monthIndex >= 8 && monthIndex <= 11)
+    const effectiveBaseGross = ((m.workerType === 'shift' || m.workerType === 'non-shift') && monthIndex >= 8 && monthIndex <= 11)
       ? m.baseGross * 1.08
       : m.baseGross;
 
     const DAILY_GROSS = effectiveBaseGross / 30;
     const HOURLY_GROSS = DAILY_GROSS / 7.5;
     const holidayGross = m.workerType === 'non-shift' ? 0 : ((m.holidayWorkHours || 0) * (DAILY_GROSS * 2.0)); 
-    const nationalHolidayGross = m.workerType === 'non-shift' ? 0 : ((m.nationalHolidayDays || 0) * 7.5 * (effectiveBaseGross / 225) * 1.5);
+    
+    // Milli / Resmi Tatil Günlük Ücreti:
+    // - Ocak ve Şubat: 482.53 TL (1 Ocak resmi tatili eski fiyat)
+    // - Mart - Ağustos: 482.53 * (91.36 / 73.67) = 598.40 TL
+    // - Eylül - Aralık: 598.40 * 1.08 = 646.27 TL
+    let nationalHolidayDailyRate = 598.40;
+    if (monthIndex === 0 || monthIndex === 1) {
+      nationalHolidayDailyRate = 482.53; // 1 Ocak tatili eski fiyat
+    } else if (monthIndex >= 8 && monthIndex <= 11) {
+      nationalHolidayDailyRate = 482.53 * (91.36 / 73.67) * 1.08;
+    } else {
+      nationalHolidayDailyRate = 482.53 * (91.36 / 73.67);
+    }
+    const nationalHolidayGross = m.workerType === 'non-shift' ? 0 : ((m.nationalHolidayDays || 0) * nationalHolidayDailyRate);
     const ikramiyeGross = ((m.bonusDays || 0) * (DAILY_GROSS * 1.0)); 
     
-    const vardiyaRate = (monthIndex >= 8 && monthIndex <= 11) ? (685.20 * 1.08) : 685.20;
-    const vardiyaGross = m.shiftHours ? (m.shiftHours * (vardiyaRate / 7.5)) : ((m.shiftDays || 0) * vardiyaRate); 
+    // Vardiya Ücreti:
+    // - Ocak ve Şubat (zamsız eski dönem): Saatlik 73.67 TL (Günlük 7.5 * 73.67 = 552.525 TL)
+    // - Mart - Ağustos (yeni dönem): Saatlik 91.36 TL (Günlük 7.5 * 91.36 = 685.20 TL)
+    // - Eylül - Aralık (%8 zamlı dönem): Saatlik 98.67 TL (Günlük 740.016 TL = 685.20 * 1.08)
+    let hourlyVardiyaRate = 91.36;
+    if (monthIndex === 0 || monthIndex === 1) {
+      hourlyVardiyaRate = 73.67;
+    } else if (monthIndex >= 8 && monthIndex <= 11) {
+      hourlyVardiyaRate = 91.36 * 1.08; // 98.6688 ≈ 98.67 TL
+    }
+    const dailyVardiyaRate = hourlyVardiyaRate * 7.5;
+    const vardiyaGross = m.shiftHours ? (m.shiftHours * hourlyVardiyaRate) : ((m.shiftDays || 0) * dailyVardiyaRate); 
     
     // Servis/Taşıt Ücreti:
-    // - Vardiyasız çalışan personelin sabit servisi vardır (13 * 362,85 TL = 4.717,05 TL brüt).
+    // - Ocak ve Şubat: Günlük brüt 237.75 TL (13 gün = 3.090,75 TL brüt)
+    // - Mart ve sonrası: Günlük brüt 362.85 TL (13 gün = 4.717,05 TL brüt)
+    // - Vardiyasız çalışan personelin sabit servisi vardır (13 günlük).
     // - Vardiyalı çalışan personelde: Servis kullanan 13 günlük, kullanmayan vardiya gün sayısı kadar alır.
+    const dailyShuttleRate = (monthIndex === 0 || monthIndex === 1) ? 237.75 : 362.85;
     const effShuttleDays = m.workerType === 'non-shift'
       ? 13
       : (m.hasShuttle ? 13 : ((m.shiftDays && m.shiftDays > 0) ? m.shiftDays : (m.shuttleDays || 20)));
-    const shuttleGross = effShuttleDays * 362.85;
+    const shuttleGross = effShuttleDays * dailyShuttleRate;
     const istanbulGross = effectiveBaseGross * 0.06;
     const additionalHolidayBonus = m.hasHolidayBonus ? 17875 : (m.holidayBonusGross || 0);
     
-    // Yemek Ücreti Gün Sayısı: Vardiyasız sabit ortalama 21 gün alır
+    // Yemek Ücreti Gün Sayısı: Vardiyasız sabit ortalama 21 gün alır.
+    // Vardiyalı çalışanlar için fiili vardiya günü ve bayram mesaisi toplamı esas alınır.
+    const actualShiftMealDays = ((m.shiftDays || 0) + (m.holidayWorkHours || 0));
     const yemekGunEff = m.workerType === 'non-shift'
       ? 21
-      : (m.yemekGun || 0);
+      : (actualShiftMealDays > 0 ? actualShiftMealDays : (m.yemekGun || 21));
 
     // Non-Cash benefits target net values (Telekom specifications)
     // Only applied if we assume it's a shifted / telekom user... we will apply if yemekGunEff > 0 or istanbul > 0
@@ -237,7 +266,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     // Private deductions (Non-cash reversed out)
     const bysKesintisi = (data.bysManuel || 0);
     const dernekKesintisi = (data.isDernekMember ? 150 : 0);
-    const effectiveBaseGrossMain = (data.workerType === 'non-shift' && i >= 8 && i <= 11)
+    const effectiveBaseGrossMain = ((data.workerType === 'shift' || data.workerType === 'non-shift') && i >= 8 && i <= 11)
       ? data.baseGross * 1.08
       : data.baseGross;
     const unionDuesDeduction = (data.isUnionMember ? (effectiveBaseGrossMain / 30) * 0.80 : 0);
