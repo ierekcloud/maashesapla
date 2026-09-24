@@ -55,7 +55,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     const is31DayMonth = [0, 2, 4, 6, 7, 9, 11].includes(i);
     const workerTypeResolved = selectedWorkerType || m.workerType || 'shift';
     const resolvedYemekGun = workerTypeResolved === 'non-shift'
-      ? (is31DayMonth ? 22 : 20)
+      ? 21
       : (m.yemekGun || 21);
     return {
       ...m,
@@ -74,7 +74,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
         hasHolidayBonus: false,
         holidayBonusGross: 0,
         yemekGun: effectiveMonths[firstIdx].workerType === 'non-shift'
-          ? (is31DayMonth ? 22 : 20)
+          ? 21
           : 22
       };
     }
@@ -92,7 +92,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
         hasHolidayBonus: false,
         holidayBonusGross: 0,
         yemekGun: lastVal.workerType === 'non-shift'
-          ? (is31DayMonth ? 22 : 20)
+          ? 21
           : 22
       };
     }
@@ -118,18 +118,18 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     const vardiyaGross = m.shiftHours ? (m.shiftHours * (vardiyaRate / 7.5)) : ((m.shiftDays || 0) * vardiyaRate); 
     
     // Servis/Taşıt Ücreti:
-    // Servis KULLANAN kişi 13 günlük alır (13 * 332,83 TL).
-    // Servis KULLANMAYAN kişi vardiya gün sayısı kadar alır (shiftDays * 332,83 TL).
+    // - Vardiyasız çalışan personelin sabit servisi vardır (13 * 362,85 TL = 4.717,05 TL brüt).
+    // - Vardiyalı çalışan personelde: Servis kullanan 13 günlük, kullanmayan vardiya gün sayısı kadar alır.
     const effShuttleDays = m.workerType === 'non-shift'
-      ? 0
+      ? 13
       : (m.hasShuttle ? 13 : ((m.shiftDays && m.shiftDays > 0) ? m.shiftDays : (m.shuttleDays || 20)));
     const shuttleGross = effShuttleDays * 362.85;
     const istanbulGross = effectiveBaseGross * 0.06;
     const additionalHolidayBonus = m.hasHolidayBonus ? 17875 : (m.holidayBonusGross || 0);
     
-    const is31DayMonth = [0, 2, 4, 6, 7, 9, 11].includes(monthIndex);
+    // Yemek Ücreti Gün Sayısı: Vardiyasız sabit ortalama 21 gün alır
     const yemekGunEff = m.workerType === 'non-shift'
-      ? (is31DayMonth ? 22 : 20)
+      ? 21
       : (m.yemekGun || 0);
 
     // Non-Cash benefits target net values (Telekom specifications)

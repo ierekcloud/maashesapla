@@ -9,6 +9,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
+    base: './',
     plugins: [react(), tailwindcss(), viteSingleFile({ removeViteModuleLoader: true })],
     build: {
       modulePreload: false

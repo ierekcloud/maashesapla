@@ -79,10 +79,11 @@ const diagnosticPanel = `
 </div>
 `;
 
-// Insert the Diagnostic Script before </head>
-const headPos = html.lastIndexOf('</head>');
-if (headPos !== -1) {
-  html = html.substring(0, headPos) + `\n${diagnosticScript}\n` + html.substring(headPos);
+// Insert the Diagnostic Script right after <head> so it catches any script errors
+const headStartPos = html.indexOf('<head>');
+if (headStartPos !== -1) {
+  const insertPos = headStartPos + '<head>'.length;
+  html = html.substring(0, insertPos) + `\n${diagnosticScript}\n` + html.substring(insertPos);
 } else {
   html = diagnosticScript + html;
 }

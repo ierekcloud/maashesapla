@@ -1,3 +1,4 @@
+// 2026 Maaş ve Bordro Hesaplama Uygulaması
 import { useState, useEffect, useMemo } from "react";
 import {
   Plus,
@@ -22,6 +23,9 @@ import {
   Check,
   Gift,
   Shield,
+  Baby,
+  ChevronDown,
+  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -139,27 +143,29 @@ const ToggleField = ({
   compact?: boolean;
 }) => (
   <div className={cn(
-    "flex items-center justify-between bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-white/5 group hover:border-rose-500/30 transition-all",
-    compact ? "p-3" : "p-4"
+    "flex items-center justify-between bg-white dark:bg-slate-900 rounded-full border border-slate-200/90 dark:border-white/10 group hover:border-rose-500/30 transition-all shadow-xs",
+    compact ? "p-1.5 px-3.5" : "p-2 px-4"
   )}>
     <label className={cn(
-      "font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest",
+      "font-black text-slate-700 dark:text-slate-200 uppercase tracking-wider",
       compact ? "text-[10px]" : "text-[11px]"
     )}>
       {label}
     </label>
     <button
+      type="button"
       onClick={() => onChange(!value)}
       className={cn(
-        "relative w-12 h-6 rounded-full transition-all duration-300 flex items-center px-1",
+        "relative w-11 h-6 rounded-full transition-all duration-300 flex items-center px-0.5",
         value
-          ? "bg-rose-600 shadow-lg shadow-rose-500/20"
+          ? "bg-rose-600 shadow-xs shadow-rose-500/30"
           : "bg-slate-200 dark:bg-slate-800",
       )}
     >
       <motion.div
-        animate={{ x: value ? 24 : 0 }}
-        className="w-4 h-4 rounded-full bg-white shadow-sm"
+        animate={{ x: value ? 20 : 0 }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        className="w-5 h-5 rounded-full bg-white shadow-xs"
       />
     </button>
   </div>
@@ -178,23 +184,23 @@ const SegmentedControl = ({
   onChange: (v: any) => void;
   compact?: boolean;
 }) => (
-  <div className={cn("space-y-2", compact && "space-y-1")}>
-    <label className={cn("font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest px-1", compact ? "text-[10px]" : "text-[11px]")}>
+  <div className={cn("space-y-1.5", compact && "space-y-1")}>
+    <label className={cn("font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest px-2.5", compact ? "text-[10px]" : "text-[11px]")}>
       {label}
     </label>
-    <div className="flex p-1 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-white/5">
+    <div className="flex p-1 bg-slate-100 dark:bg-slate-800/60 rounded-full border border-slate-200/80 dark:border-white/10 shadow-xs">
       {options.map((opt) => {
         const isActive = value === opt.value;
         return (
           <button
             key={String(opt.value)}
+            type="button"
             onClick={() => onChange(opt.value)}
             className={cn(
-              "flex-1 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
-              compact ? "py-1.5" : "py-2",
+              "flex-1 text-[10px] font-black uppercase tracking-wider rounded-full transition-all py-1.5",
               isActive
-                ? "bg-rose-600 text-white dark:bg-rose-500 dark:text-white shadow-sm font-extrabold"
-                : "text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-bold",
+                ? "bg-rose-600 text-white dark:bg-rose-500 dark:text-white shadow-xs font-black scale-[1.01]"
+                : "text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 font-bold hover:bg-white/50 dark:hover:bg-slate-700/40",
             )}
           >
             {opt.label}
@@ -309,7 +315,7 @@ export default function App() {
   const [showSuggestionBox, setShowSuggestionBox] = useState(true);
   const [isMonthMenuOpen, setIsMonthMenuOpen] = useState(false);
   const [showAppliedFeedback, setShowAppliedFeedback] = useState(false);
-  const [showChildCount, setShowChildCount] = useState(true);
+  const [showChildCount, setShowChildCount] = useState(false);
 
   const [workerType, setWorkerType] = useState<"shift" | "non-shift" | "shift-non-union" | null>(null);
 
@@ -457,7 +463,7 @@ export default function App() {
   const activeResult = results[activeMonth];
   const activeYemekDays =
     workerType === "non-shift"
-      ? ([0, 2, 4, 6, 7, 9, 11].includes(activeMonth) ? 22 : 20)
+      ? 21
       : (monthsData[activeMonth]?.shiftDays || 0) +
         (monthsData[activeMonth]?.holidayWorkHours || 0);
   const activeYemekAmount = activeYemekDays * 550;
@@ -466,7 +472,7 @@ export default function App() {
     return results.map((r, i) => {
       const mInput = monthsData[i];
       const mealDays = workerType === "non-shift"
-        ? ([0, 2, 4, 6, 7, 9, 11].includes(i) ? 22 : 20)
+        ? 21
         : (mInput?.shiftDays || 0) + (mInput?.holidayWorkHours || 0);
       const mealValue = mInput && mInput.baseGross > 0 ? mealDays * 550 : 0;
       return {
@@ -487,8 +493,9 @@ export default function App() {
       setMonthsData((prev) => {
         const nw = prev.map((m, i) => ({
           ...m,
-          hasShuttle: false,
+          hasShuttle: true, // Sabit servisi var
           shiftDays: 0,
+          yemekGun: 21, // Sabit ortalama 21 gün yemek
           bonusDays: [2, 4, 6, 8, 10, 11].includes(i) ? (i === 11 ? 12 : 20) : 0,
           workerType: type,
         }));
@@ -600,7 +607,7 @@ export default function App() {
         const mInput = monthsData[i];
         if (!mInput || mInput.baseGross === 0) return acc;
         const mealDays = workerType === "non-shift"
-          ? ([0, 2, 4, 6, 7, 9, 11].includes(i) ? 22 : 20)
+          ? 21
           : ((mInput.shiftDays || 0) + (mInput.holidayWorkHours || 0));
         return (
           acc + mealDays * 550
@@ -1016,27 +1023,28 @@ export default function App() {
                               suffix="GÜN"
                             />
                           </div>
-
-                          <div className="grid grid-cols-1 gap-4">
-                            <SegmentedControl
-                              label="BAYRAM PARASI"
-                              options={[
-                                { label: "EVET", value: true },
-                                { label: "HAYIR", value: false },
-                              ]}
-                              value={
-                                monthsData[activeMonth].hasHolidayBonus || false
-                              }
-                              onChange={(v) =>
-                                updateMonth(activeMonth, "hasHolidayBonus", v)
-                              }
-                            />
-                          </div>
                         </>
                       )}
 
+                      {(workerType === "shift" || workerType === "non-shift" || workerType === "shift-non-union") && (
+                        <div className="grid grid-cols-1 gap-4">
+                          <SegmentedControl
+                            label="BAYRAM PARASI"
+                            options={[
+                              { label: "EVET", value: true },
+                              { label: "HAYIR", value: false },
+                            ]}
+                            value={
+                              monthsData[activeMonth].hasHolidayBonus || false
+                            }
+                            onChange={(v) =>
+                              updateMonth(activeMonth, "hasHolidayBonus", v)
+                            }
+                          />
+                        </div>
+                      )}
 
-                      {workerType === "shift" && (
+                      {(workerType === "shift" || workerType === "shift-non-union") && (
                         <div className="grid grid-cols-1 gap-4">
                           <SegmentedControl
                             label="SERVİS KULLANIYOR MU?"
@@ -1109,61 +1117,113 @@ export default function App() {
                           </div>
                         )}
 
-                      <div>
-                          <button
-                            onClick={() => setShowChildCount(!showChildCount)}
-                            className={cn(
-                                "w-full flex items-center justify-between p-3 border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide hover:border-rose-400 transition-all",
-                                showChildCount ? "rounded-t-xl" : "rounded-xl"
-                            )}
-                          >
-                            <span>ÇOCUK SAYISI</span>
-                            <span className="font-extrabold text-rose-600 dark:text-rose-400">
-                              {monthsData[activeMonth].childCount === 0 ? "YOK" : monthsData[activeMonth].childCount} {showChildCount ? "▲" : "▼"}
+                      {/* ÇOCUK SAYISI (Oval, İçerden Açılan/Kapanan Buton) */}
+                      <motion.div
+                        layout
+                        transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                        className={cn(
+                          "w-full border border-slate-200/90 dark:border-white/10 bg-white dark:bg-slate-900 transition-all duration-300 overflow-hidden shadow-xs",
+                          showChildCount
+                            ? "rounded-3xl p-2 space-y-2 hover:border-rose-500/30"
+                            : "rounded-full p-1 hover:border-rose-400/50"
+                        )}
+                      >
+                        {/* Oval Başlık / Tetikleyici Buton */}
+                        <button
+                          type="button"
+                          onClick={() => setShowChildCount(!showChildCount)}
+                          className={cn(
+                            "w-full flex items-center justify-between rounded-full transition-colors",
+                            showChildCount
+                              ? "px-3 py-1 text-rose-600 dark:text-rose-400"
+                              : "px-3 py-1.5 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={cn(
+                                "w-6 h-6 rounded-full flex items-center justify-center transition-colors",
+                                monthsData[activeMonth].childCount > 0
+                                  ? "bg-rose-500 text-white"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                              )}
+                            >
+                              <Baby size={13} strokeWidth={2.4} />
+                            </div>
+                            <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                              ÇOCUK SAYISI
                             </span>
-                          </button>
-                          <AnimatePresence>
-                            {showChildCount && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden border border-t-0 rounded-b-xl border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800 p-2"
-                              >
-                                <div className="grid grid-cols-2 gap-2">
-                                  {[
-                                    { label: "YOK", value: 0 },
-                                    { label: "1", value: 1 },
-                                    { label: "2", value: 2 },
-                                    { label: "3", value: 3 },
-                                    { label: "4+", value: 4 },
-                                  ].map((opt, idx) => (
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className={cn(
+                                "px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all",
+                                monthsData[activeMonth].childCount > 0
+                                  ? "bg-rose-500 text-white shadow-xs"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
+                              )}
+                            >
+                              {monthsData[activeMonth].childCount === 0
+                                ? "YOK"
+                                : monthsData[activeMonth].childCount}
+                            </span>
+                            <motion.div
+                              animate={{ rotate: showChildCount ? 180 : 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="text-slate-400 dark:text-slate-500 flex items-center"
+                            >
+                              <ChevronDown size={14} />
+                            </motion.div>
+                          </div>
+                        </button>
+
+                        {/* İçerden Açılan Oval Seçim Butonları */}
+                        <AnimatePresence>
+                          {showChildCount && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-full border border-slate-200/60 dark:border-white/5">
+                                {[
+                                  { label: "YOK", value: 0 },
+                                  { label: "1", value: 1 },
+                                  { label: "2", value: 2 },
+                                  { label: "3", value: 3 },
+                                  { label: "4+", value: 4 },
+                                ].map((opt) => {
+                                  const isSelected =
+                                    monthsData[activeMonth].childCount === opt.value;
+                                  return (
                                     <button
                                       key={opt.value}
+                                      type="button"
                                       onClick={() => {
                                         updateMonth(activeMonth, "childCount", opt.value);
-                                        setShowChildCount(false);
                                       }}
                                       className={cn(
-                                        "py-2 text-[11px] font-black uppercase tracking-widest rounded-xl transition-all",
-                                        idx === 0 ? "col-span-2" : "col-span-1",
-                                        monthsData[activeMonth].childCount === opt.value
-                                          ? "bg-rose-600 text-white dark:bg-rose-500 shadow-sm"
-                                          : "bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-600"
+                                        "flex-1 py-1.5 text-[10px] font-black uppercase rounded-full transition-all tracking-wider",
+                                        isSelected
+                                          ? "bg-rose-600 text-white shadow-xs font-black scale-[1.02]"
+                                          : "text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:bg-white/60 dark:hover:bg-slate-700/50"
                                       )}
                                     >
                                       {opt.label}
                                     </button>
-                                  ))}
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
+                                  );
+                                })}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.div>
 
-                      </div>
-
-                      <div className="flex items-center gap-4 p-4 border border-slate-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-800">
-                        <div className="flex-1 font-bold text-sm text-slate-700 dark:text-slate-300">
+                      <div className="flex items-center gap-4 p-3.5 px-4 border border-slate-200/90 dark:border-white/10 rounded-3xl bg-white dark:bg-slate-900 shadow-xs">
+                        <div className="flex-1 font-black text-[11px] text-slate-700 dark:text-slate-200 uppercase tracking-wider">
                           BYS KESİNTİ TUTARI
                         </div>
                         <div className="w-32">
@@ -1173,6 +1233,7 @@ export default function App() {
                             onChange={(v) =>
                               updateMonth(activeMonth, "bysManuel", v)
                             }
+                            prefix="₺"
                           />
                         </div>
                       </div>
@@ -1872,10 +1933,11 @@ export default function App() {
                             Yemek Ücreti
                           </span>
                           <span>
-                            Gün. Net{" "}
+                            Aylık Sabit 21 Gün (Gün. Net{" "}
                             <strong className="text-slate-900 dark:text-white font-extrabold text-[13px]">
                               550,00 ₺
                             </strong>
+                            )
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -1902,7 +1964,7 @@ export default function App() {
                             Servis Ücreti
                           </span>
                           <span className="text-[11px] xl:text-xs">
-                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">332,83</strong> TL'dir.
+                            Sabit servis kullanan olarak <strong className="text-slate-950 dark:text-white font-black">13 günlük brüt (13 × 362,85 TL = 4.717,05 TL)</strong> hesaplamaya otomatik dahil edilir.
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -1946,7 +2008,7 @@ export default function App() {
                               const mInput = monthsData[i];
                               if (!mInput || mInput.baseGross === 0) return acc;
                               const mealDays = workerType === "non-shift"
-                                ? ([0, 2, 4, 6, 7, 9, 11].includes(i) ? 22 : 20)
+                                ? 21
                                 : ((mInput.shiftDays || 0) + (mInput.holidayWorkHours || 0));
                               return (
                                 acc + mealDays * 550
@@ -1967,7 +2029,7 @@ export default function App() {
                                 if (!mInput || mInput.baseGross === 0)
                                   return acc;
                                 const mealDays = workerType === "non-shift"
-                                  ? ([0, 2, 4, 6, 7, 9, 11].includes(i) ? 22 : 20)
+                                  ? 21
                                   : ((mInput.shiftDays || 0) + (mInput.holidayWorkHours || 0));
                                 return (
                                   acc + mealDays * 550
@@ -2000,7 +2062,7 @@ export default function App() {
                                   if (!mInput || mInput.baseGross === 0)
                                     return acc;
                                   const mealDays = workerType === "non-shift"
-                                    ? ([0, 2, 4, 6, 7, 9, 11].includes(i) ? 22 : 20)
+                                    ? 21
                                     : ((mInput.shiftDays || 0) + (mInput.holidayWorkHours || 0));
                                   return (
                                     acc + mealDays * 550
