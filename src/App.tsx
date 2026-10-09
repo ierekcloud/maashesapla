@@ -25,8 +25,12 @@ import {
   Shield,
   Baby,
   ChevronDown,
+  ChevronUp,
   Sparkles,
+  Printer,
+  Receipt,
 } from "lucide-react";
+import cashWallpaper from "./assets/images/cash_wallpaper_1791578581672.jpg";
 import { motion, AnimatePresence } from "motion/react";
 import {
   AreaChart,
@@ -266,8 +270,8 @@ const initialMonthsStatic: MonthInput[] = Array(12)
     isUnionMember: false,
     istanbulTazminati: 0,
     yemekGun: 21,
-    familyAllowanceGrossOverride: 1500,
-    childAllowanceGrossOverride: 500,
+    familyAllowanceGrossOverride: undefined,
+    childAllowanceGrossOverride: undefined,
   }));
 
 const safeLocalStorage = {
@@ -318,6 +322,8 @@ export default function App() {
   const [showChildCount, setShowChildCount] = useState(false);
 
   const [workerType, setWorkerType] = useState<"shift" | "non-shift" | "shift-non-union" | null>(null);
+
+  const [showDetailedPayroll, setShowDetailedPayroll] = useState(false);
 
   const [monthsData, setMonthsData] = useState<MonthInput[]>(() => {
     const savedType = safeLocalStorage.getItem("salary_worker_type_v3");
@@ -668,9 +674,13 @@ export default function App() {
           targetBonusDays = 0;
         }
 
+        const targetBaseGross = (activeMonth < 8 && i >= 8 && (workerType === "shift" || workerType === "non-shift"))
+          ? Number((activeData.baseGross * 1.08).toFixed(2))
+          : activeData.baseGross;
+
         return {
           ...m,
-          baseGross: activeData.baseGross,
+          baseGross: targetBaseGross,
           shiftDays: activeData.shiftDays,
           bonusDays: targetBonusDays,
           holidayWorkHours: activeData.holidayWorkHours,
@@ -761,21 +771,25 @@ export default function App() {
   return (
     <div
       className={cn(
-        "min-h-screen flex flex-col font-sans selection:bg-blue-200 transition-colors duration-500 relative bg-mesh",
+        "min-h-screen flex flex-col font-sans selection:bg-blue-200 transition-colors duration-500 relative",
         isDarkMode && "dark",
       )}
     >
-      {/* Soft Yellow Glow */}
-      {!isDarkMode && (
-        <div
-          className="absolute inset-0 z-0 pointer-events-none"
-          style={{
-            backgroundImage: `radial-gradient(circle at center, #FFF991 0%, transparent 70%)`,
-            opacity: 0.6,
-            mixBlendMode: "multiply",
-          }}
+      {/* Background Wallpaper: Yumuşak, Gözü Yormayan Koyu Tonlu Dolar ve Para Teması */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none">
+        <img
+          src={cashWallpaper}
+          alt="Para ve Dolar Arka Fonu"
+          className="w-full h-full object-cover object-center transform scale-[1.01] transition-all duration-700 filter contrast-[1.02] brightness-[0.72] dark:brightness-[0.52] opacity-85 dark:opacity-75"
         />
-      )}
+        {/* Karartma katmanı: Göz almasını önler, hafif ve zarif şekilde arka planda hissettirir */}
+        <div
+          className={cn(
+            "absolute inset-0 transition-colors duration-500",
+            isDarkMode ? "bg-slate-950/65" : "bg-slate-900/40 backdrop-blur-[1px]",
+          )}
+        />
+      </div>
 
       {/* Modern Global Header */}
       <header className="sticky top-0 z-50 w-full glass-panel border-b border-slate-200 dark:border-white/5 py-4 px-6 md:px-12 flex items-center justify-between">
@@ -784,9 +798,14 @@ export default function App() {
             <Calculator size={20} />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-xl md:text-2xl font-display font-black text-slate-950 dark:text-white uppercase tracking-tighter leading-none">
-              MAAŞ ANALİZİ
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl md:text-2xl font-display font-black text-slate-950 dark:text-white uppercase tracking-tighter leading-none">
+                MAAŞ ANALİZİ
+              </h1>
+              <span className="px-2 py-0.5 text-[10px] font-black rounded-md bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 tracking-wider">
+                v2.7
+              </span>
+            </div>
             <span className="text-[11px] text-slate-600 dark:text-slate-400 font-black uppercase tracking-[0.3em] mt-1.5 hidden md:block leading-none">
               AKILLI BORDRO HESAPLAYICI
             </span>
@@ -803,7 +822,7 @@ export default function App() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white dark:bg-white/5 text-slate-500 dark:text-white/50 border border-slate-200 dark:border-white/10 hover:border-blue-500/50 transition-all shadow-sm"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white dark:bg-white/5 text-slate-500 dark:text-white/50 border border-slate-200 dark:border-white/10 hover:border-blue-500/50 transition-all shadow-sm cursor-pointer"
           >
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
@@ -838,7 +857,7 @@ export default function App() {
       </header>
 
       <main className="flex-1 w-full max-w-[1550px] mx-auto p-2 lg:p-4 relative z-10 flex flex-col justify-center">
-        <div className="glass-panel rounded-[2rem] shadow-[0_24px_80px_-15px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_80px_-15px_rgba(0,0,0,0.3)] overflow-hidden lg:h-[calc(100vh-130px)] lg:max-h-[820px] lg:min-h-[640px] flex flex-col">
+        <div className="rounded-[2rem] border border-white/50 dark:border-white/10 shadow-[0_24px_80px_-15px_rgba(0,0,0,0.2)] bg-white/20 dark:bg-black/25 backdrop-blur-[2px] overflow-hidden lg:h-[calc(100vh-130px)] lg:max-h-[820px] lg:min-h-[640px] flex flex-col">
           <AnimatePresence mode="wait">
             {activeTab === "calculator" && workerType === null && (
               <motion.div
@@ -863,7 +882,7 @@ export default function App() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                   <button
                     onClick={() => handleWorkerTypeSelect("shift")}
-                    className="group flex flex-col items-center justify-center p-10 w-72 rounded-[3rem] bg-white dark:bg-slate-800/50 border-2 border-transparent hover:border-blue-500/50 hover:bg-blue-50/50 dark:hover:bg-slate-800 transition-all duration-500 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-blue-500/10 relative overflow-hidden"
+                    className="group flex flex-col items-center justify-center p-10 w-72 rounded-[3rem] bg-white/85 dark:bg-slate-800/70 backdrop-blur-md border-2 border-transparent hover:border-blue-500/50 hover:bg-white/95 dark:hover:bg-slate-800 transition-all duration-500 shadow-xl shadow-slate-900/10 dark:shadow-none hover:shadow-2xl hover:shadow-blue-500/10 relative overflow-hidden"
                   >
                     <div className="w-20 h-20 rounded-[2rem] bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-500">
                       <History size={40} strokeWidth={2} />
@@ -878,7 +897,7 @@ export default function App() {
 
                   <button
                     onClick={() => handleWorkerTypeSelect("shift-non-union")}
-                    className="group flex flex-col items-center justify-center p-10 w-72 rounded-[3rem] bg-white dark:bg-slate-800/50 border-2 border-transparent hover:border-emerald-500/50 hover:bg-emerald-50/50 dark:hover:bg-slate-800 transition-all duration-500 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-emerald-500/10 relative overflow-hidden"
+                    className="group flex flex-col items-center justify-center p-10 w-72 rounded-[3rem] bg-white/85 dark:bg-slate-800/70 backdrop-blur-md border-2 border-transparent hover:border-emerald-500/50 hover:bg-white/95 dark:hover:bg-slate-800 transition-all duration-500 shadow-xl shadow-slate-900/10 dark:shadow-none hover:shadow-2xl hover:shadow-emerald-500/10 relative overflow-hidden"
                   >
                     <div className="w-20 h-20 rounded-[2rem] bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
                       <Shield size={40} strokeWidth={2} />
@@ -893,7 +912,7 @@ export default function App() {
 
                   <button
                     onClick={() => handleWorkerTypeSelect("non-shift")}
-                    className="group flex flex-col items-center justify-center p-10 w-72 rounded-[3rem] bg-white dark:bg-slate-800/50 border-2 border-transparent hover:border-indigo-500/50 hover:bg-indigo-50/50 dark:hover:bg-slate-800 transition-all duration-500 shadow-xl shadow-slate-200/50 dark:shadow-none hover:shadow-2xl hover:shadow-indigo-500/10 relative overflow-hidden"
+                    className="group flex flex-col items-center justify-center p-10 w-72 rounded-[3rem] bg-white/85 dark:bg-slate-800/70 backdrop-blur-md border-2 border-transparent hover:border-indigo-500/50 hover:bg-white/95 dark:hover:bg-slate-800 transition-all duration-500 shadow-xl shadow-slate-900/10 dark:shadow-none hover:shadow-2xl hover:shadow-indigo-500/10 relative overflow-hidden"
                   >
                     <div className="w-20 h-20 rounded-[2rem] bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-8 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
                       <Calendar size={40} strokeWidth={2} />
@@ -908,7 +927,7 @@ export default function App() {
                 </div>
 
                 <div className="mt-10 flex items-center justify-center gap-2 text-slate-400 dark:text-slate-500 text-xs font-bold tracking-widest uppercase">
-                  <span>Versiyon 2.5</span>
+                  <span>Versiyon 2.7</span>
                   <span>•</span>
                   <span>2026</span>
                 </div>
@@ -924,7 +943,7 @@ export default function App() {
                 className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden"
               >
                 {/* LEFT: Input Form Area */}
-                <div className="w-full lg:w-[325px] shrink-0 p-4 overflow-y-auto space-y-3.5 border-r border-slate-200/60 dark:border-white/5 bg-white dark:bg-slate-900/45 lg:order-none order-2">
+                <div className="w-full lg:w-[325px] shrink-0 p-4 overflow-y-auto space-y-3.5 border-r border-white/40 dark:border-white/5 bg-white/60 dark:bg-slate-900/50 backdrop-blur-xs lg:order-none order-2">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
                     <h3 className="text-[12px] font-black text-slate-900 dark:text-white uppercase tracking-[0.2em] leading-none">
                       VERİ GİRİŞ ALANI
@@ -950,11 +969,6 @@ export default function App() {
                             updateMonth(activeMonth, "baseGross", v)
                           }
                         />
-                        {(workerType === "shift" || workerType === "non-shift") && activeMonth >= 8 && (
-                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold px-1 mt-1 leading-tight">
-                            ℹ️ Brüt Maaşa Eylül itibarıyla %8 zam dahil edilmiştir.
-                          </div>
-                        )}
                       </div>
 
                       {(workerType === "shift" || workerType === "shift-non-union") && (
@@ -1063,6 +1077,17 @@ export default function App() {
                               updateMonth(activeMonth, "hasShuttle", v)
                             }
                           />
+                          {!monthsData[activeMonth].hasShuttle && (
+                            <InputField
+                              label="YOL / VASITA GÜNÜ"
+                              value={monthsData[activeMonth].shuttleDays !== undefined && monthsData[activeMonth].shuttleDays > 0 ? monthsData[activeMonth].shuttleDays : 21}
+                              onChange={(v) =>
+                                updateMonth(activeMonth, "shuttleDays", v)
+                              }
+                              prefix=""
+                              suffix="GÜN"
+                            />
+                          )}
                         </div>
                       )}
 
@@ -1248,7 +1273,7 @@ export default function App() {
                 </div>
 
                 {/* MIDDLE: Results & Net Payment */}
-                <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-slate-950/45 lg:order-none order-3">
+                <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-white/20 dark:bg-slate-950/25 backdrop-blur-[1px] lg:order-none order-3">
                   {(workerType === "shift" || workerType === "non-shift") &&
                     [2, 4, 6, 8, 10, 11].includes(activeMonth) && (
                       <div className="bg-gradient-to-r from-orange-500/[0.08] to-amber-500/[0.04] dark:from-orange-500/[0.06] dark:to-transparent border border-orange-500/20 dark:border-orange-500/30 rounded-2xl p-3 flex items-center gap-3 shadow-sm">
@@ -1312,34 +1337,249 @@ export default function App() {
                     </div>
 
                     {/* Alt Özet Kutuları */}
-                    <div className="flex justify-center gap-3.5 flex-wrap mt-5 pt-4 border-t border-slate-700/60 dark:border-white/10 relative z-10">
-                      <div className="bg-white/5 backdrop-blur-md px-4 py-2 rounded-xl border border-white/5 min-w-[110px] text-center">
-                        <span className="text-[8px] text-white/40 block uppercase font-black tracking-widest mb-0.5">
+                    <div className="flex justify-center gap-2.5 flex-wrap mt-4 pt-3.5 border-t border-slate-700/60 dark:border-white/10 relative z-10">
+                      <div className="bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 min-w-[95px] text-center">
+                        <span className="text-[7.5px] text-white/40 block uppercase font-black tracking-widest mb-0.5">
                           Brüt Toplam
                         </span>
-                        <span className="text-sm text-white font-display font-black">
+                        <span className="text-xs sm:text-sm text-white font-display font-black">
                           {formatCurrency(activeResult.totalGross)}
                         </span>
                       </div>
-                      <div className="bg-white/5 backdrop-blur-md px-4 py-2 rounded-xl border border-white/5 min-w-[110px] text-center">
-                        <span className="text-[8px] text-white/40 block uppercase font-black tracking-widest mb-0.5">
+                      <div className="bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 min-w-[95px] text-center">
+                        <span className="text-[7.5px] text-amber-300/70 block uppercase font-black tracking-widest mb-0.5">
+                          Küm. Matrah
+                        </span>
+                        <span className="text-xs sm:text-sm text-amber-300 font-display font-black">
+                          {formatCurrency(activeResult.cumulativeTaxBaseBefore + activeResult.incomeTaxBase)}
+                        </span>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 min-w-[85px] text-center">
+                        <span className="text-[7.5px] text-rose-300/70 block uppercase font-black tracking-widest mb-0.5">
                           Vergi Dilimi
                         </span>
-                        <span className="text-sm text-rose-300 font-display font-black">
+                        <span className="text-xs sm:text-sm text-rose-300 font-display font-black">
                           %{activeResult.taxBracket}
                         </span>
                       </div>
-                      <div className="bg-white/5 backdrop-blur-md px-4 py-2 rounded-xl border border-white/5 min-w-[110px] text-center">
-                        <span className="text-[8px] text-white/40 block uppercase font-black tracking-widest mb-0.5">
+                      <div className="bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 min-w-[95px] text-center">
+                        <span className="text-[7.5px] text-rose-400/70 block uppercase font-black tracking-widest mb-0.5">
+                          Top. Kesinti
+                        </span>
+                        <span className="text-xs sm:text-sm text-rose-400 font-display font-black">
+                          {formatCurrency(activeResult.totalLegalDeductions + activeResult.privateDeductions)}
+                        </span>
+                      </div>
+                      <div className="bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/5 min-w-[95px] text-center">
+                        <span className="text-[7.5px] text-emerald-400/70 block uppercase font-black tracking-widest mb-0.5">
                           Toplam Yemek
                         </span>
-                        <span className="text-sm text-emerald-400 font-display font-black">
+                        <span className="text-xs sm:text-sm text-emerald-400 font-display font-black">
                           {formatCurrency(activeYemekAmount)}
                         </span>
                       </div>
                     </div>
+                  </div>
 
+                  {/* DETAYLI RESMİ BORDRO & KESİNTİ DÖKÜMÜ (AÇILIR KAPANIR) */}
+                  <div className="max-w-[580px] mx-auto w-full">
+                    <button
+                      onClick={() => setShowDetailedPayroll(!showDetailedPayroll)}
+                      className="w-full p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 hover:border-emerald-500/40 transition-all flex items-center justify-between shadow-sm group active:scale-[0.99]"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                          <Receipt size={14} className="group-hover:scale-110 transition-transform" />
+                        </div>
+                        <div className="text-left">
+                          <div className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-wider leading-tight">
+                            {shortMonths[activeMonth]} 2026 Detaylı Bordro & Kesinti Dökümü
+                          </div>
+                          <div className="text-[9px] text-slate-500 dark:text-slate-400 font-semibold">
+                            Brüt kazançlar, SGK, vergi istisnaları ve resmi kalemler
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider">
+                          {showDetailedPayroll ? "Gizle" : "İncele"}
+                        </span>
+                        {showDetailedPayroll ? (
+                          <ChevronUp size={16} className="text-emerald-500" />
+                        ) : (
+                          <ChevronDown size={16} className="text-emerald-500" />
+                        )}
+                      </div>
+                    </button>
 
+                    <AnimatePresence>
+                      {showDetailedPayroll && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-2.5 p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md rounded-2xl border border-slate-200 dark:border-white/10 shadow-lg space-y-4">
+                            {/* Başlık ve Çıktı Butonu */}
+                            <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-white/5">
+                              <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest flex items-center gap-1.5">
+                                <Sparkles size={12} className="text-amber-500" />
+                                RESMİ BORDRO HESAP KALEMLERİ
+                              </span>
+                              <button
+                                onClick={() => window.print()}
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all"
+                                title="Bu ayın bordrosunu yazdır / PDF olarak kaydet"
+                              >
+                                <Printer size={11} /> Yazdır / PDF
+                              </button>
+                            </div>
+
+                            {/* 1. Kazançlar & Brütler */}
+                            <div className="space-y-1.5">
+                              <div className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">
+                                1. Kazançlar & Tahakkuk Eden Brütler
+                              </div>
+                              <div className="bg-slate-50 dark:bg-white/[0.02] p-2.5 rounded-xl border border-slate-100 dark:border-white/5 space-y-1 text-[10.5px]">
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>Temel Brüt Maaş</span>
+                                  <span className="font-mono font-bold">{formatCurrency(monthsData[activeMonth].baseGross)}</span>
+                                </div>
+                                {monthsData[activeMonth].bonusDays > 0 && (
+                                  <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                    <span>İkramiye Hakedişi ({monthsData[activeMonth].bonusDays} Günlük)</span>
+                                    <span className="font-mono font-bold">
+                                      {formatCurrency((monthsData[activeMonth].bonusDays * monthsData[activeMonth].baseGross) / 30)}
+                                    </span>
+                                  </div>
+                                )}
+                                {monthsData[activeMonth].shiftDays > 0 && (
+                                  <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                    <span>Vardiya Primi ({monthsData[activeMonth].shiftDays} Gün)</span>
+                                    <span className="font-mono font-bold">
+                                      {formatCurrency(
+                                        monthsData[activeMonth].shiftDays *
+                                          (activeMonth <= 1 ? 552.53 : activeMonth >= 8 ? 740.02 : 685.20)
+                                      )}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>Vasıta (Yol) / Servis Desteği</span>
+                                  <span className="font-mono font-bold">
+                                    {formatCurrency(
+                                      (workerType === "non-shift" ? 13 : monthsData[activeMonth].hasShuttle ? 13 : 21) *
+                                        (activeMonth <= 1 ? 237.75 : 362.86)
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>İstanbul Tazminatı (%6)</span>
+                                  <span className="font-mono font-bold">
+                                    {formatCurrency(monthsData[activeMonth].baseGross * 0.06)}
+                                  </span>
+                                </div>
+                                {monthsData[activeMonth].hasHolidayBonus && (
+                                  <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                    <span>Bayram Parası</span>
+                                    <span className="font-mono font-bold">17.875,00 ₺</span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between items-center pt-1.5 mt-1 border-t border-slate-200 dark:border-white/10 font-black text-slate-900 dark:text-white">
+                                  <span>TOPLAM BRÜT HAKEDİŞ</span>
+                                  <span className="font-mono text-emerald-600 dark:text-emerald-400">
+                                    {formatCurrency(activeResult.totalGross)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* 2. Yasal & Özel Kesintiler */}
+                            <div className="space-y-1.5">
+                              <div className="text-[9px] font-black text-rose-500 dark:text-rose-400 uppercase tracking-widest">
+                                2. Yasal & Özel Kesintiler
+                              </div>
+                              <div className="bg-slate-50 dark:bg-white/[0.02] p-2.5 rounded-xl border border-slate-100 dark:border-white/5 space-y-1 text-[10.5px]">
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>SGK Primi İşçi Payı (%14)</span>
+                                  <span className="font-mono font-bold text-rose-500">-{formatCurrency(activeResult.sgkEmployee)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>İşsizlik Sigortası Fonu (%1)</span>
+                                  <span className="font-mono font-bold text-rose-500">-{formatCurrency(activeResult.unemploymentEmployee)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>Gelir Vergisi Matrahı</span>
+                                  <span className="font-mono font-semibold">{formatCurrency(activeResult.incomeTaxBase)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>Kümülatif Vergi Matrahı</span>
+                                  <span className="font-mono font-semibold text-amber-600 dark:text-amber-400">
+                                    {formatCurrency(activeResult.cumulativeTaxBaseBefore + activeResult.incomeTaxBase)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>Hesaplanan Gelir Vergisi (Brüt)</span>
+                                  <span className="font-mono font-semibold">{formatCurrency(activeResult.incomeTaxBeforeExemption)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                                  <span>Asgari Ücret GV İstisnası (İndirim)</span>
+                                  <span className="font-mono font-bold">+{formatCurrency(activeResult.incomeTaxExemption)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>Ödenen Net Gelir Vergisi (Dilim: %{activeResult.taxBracket})</span>
+                                  <span className="font-mono font-bold text-rose-500">-{formatCurrency(activeResult.finalIncomeTax)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>Damga Vergisi Kesintisi (Net)</span>
+                                  <span className="font-mono font-bold text-rose-500">-{formatCurrency(activeResult.finalStampTax)}</span>
+                                </div>
+                                {activeResult.privateDeductions > 0 && (
+                                  <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                    <span>Özel Kesintiler (Sendika/BYS/Dernek)</span>
+                                    <span className="font-mono font-bold text-rose-500">-{formatCurrency(activeResult.privateDeductions)}</span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between items-center pt-1.5 mt-1 border-t border-slate-200 dark:border-white/10 font-black text-rose-600 dark:text-rose-400">
+                                  <span>TOPLAM KESİNTİLER</span>
+                                  <span className="font-mono">
+                                    -{formatCurrency(activeResult.totalLegalDeductions + activeResult.privateDeductions)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* 3. Net Ödemeler */}
+                            <div className="space-y-1.5">
+                              <div className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+                                3. Net Hakedişler & Hesap Dağılımı
+                              </div>
+                              <div className="bg-slate-50 dark:bg-white/[0.02] p-2.5 rounded-xl border border-slate-100 dark:border-white/5 space-y-1 text-[10.5px]">
+                                <div className="flex justify-between items-center text-slate-700 dark:text-slate-300">
+                                  <span>Yasal Net Ücret</span>
+                                  <span className="font-mono font-bold">{formatCurrency(activeResult.legalNet)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-slate-900 dark:text-white font-black text-xs">
+                                  <span>BANKAYA YATAN NET MAAŞ</span>
+                                  <span className="font-mono text-emerald-600 dark:text-emerald-400">{formatCurrency(activeResult.netPaid)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 font-bold">
+                                  <span>Yemek Kartı Hakedişi</span>
+                                  <span className="font-mono">+{formatCurrency(activeYemekAmount)}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-1.5 mt-1 border-t border-slate-200 dark:border-white/10 font-black text-slate-950 dark:text-white text-xs">
+                                  <span>AYLIK TOPLAM NET PAKET</span>
+                                  <span className="font-mono text-emerald-500">
+                                    {formatCurrency(activeResult.netPaid + activeYemekAmount)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
 
                   <div className="hidden">
@@ -1744,7 +1984,7 @@ export default function App() {
                 </div>
 
                 {/* RIGHT: Month Navigation Grid & Info */}
-                <div className="w-full lg:w-[340px] bg-slate-100/40 dark:bg-slate-900/45 border-b lg:border-b-0 lg:border-l border-slate-200/60 dark:border-white/5 p-4 lg:p-5 space-y-4 shrink-0 overflow-y-auto lg:order-last order-first">
+                <div className="w-full lg:w-[340px] bg-white/55 dark:bg-slate-900/45 backdrop-blur-xs border-b lg:border-b-0 lg:border-l border-white/40 dark:border-white/5 p-4 lg:p-5 space-y-4 shrink-0 overflow-y-auto lg:order-last order-first">
                   <div className="flex items-center justify-between gap-1.5 flex-wrap">
                     <div className="flex items-center gap-2">
                       <Calendar size={18} className="text-blue-500 shrink-0" />
@@ -1916,7 +2156,7 @@ export default function App() {
                             Servis Ücreti
                           </span>
                           <span className="text-[11px] xl:text-xs">
-                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">{activeMonth <= 1 ? "237,75" : "362,85"}</strong> TL'dir. Servis kullanan kişi 13 günlük, servis kullanmayan kişi ise vardiya gün sayısı kadar alır.
+                            Günlük brüt <strong className="text-slate-950 dark:text-white font-black">{activeMonth <= 1 ? "237,75" : "362,85"}</strong> TL'dir. Servis kullanan kişi 13 günlük, servis kullanmayan kişi ise yol gün sayısı (21 gün) kadar alır.
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -2211,11 +2451,16 @@ export default function App() {
         )}
 
         {/* Signature */}
-        <div className="opacity-60 hover:opacity-100 transition-all group translate-y-1 hover:translate-y-0 pl-1">
+        <div className="opacity-70 hover:opacity-100 transition-all group translate-y-1 hover:translate-y-0 pl-1">
           <div className="flex flex-col items-start">
-            <span className="text-[8px] font-black tracking-[0.4em] text-slate-500 dark:text-slate-400 uppercase mb-0.5 animate-pulse">
-              CREATED BY
-            </span>
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <span className="text-[8px] font-black tracking-[0.4em] text-slate-500 dark:text-slate-400 uppercase animate-pulse">
+                CREATED BY
+              </span>
+              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300">
+                v2.7
+              </span>
+            </div>
             <span className="text-xl font-black italic tracking-tighter text-slate-950 dark:text-white bg-clip-text text-transparent bg-gradient-to-br from-slate-900 via-blue-600 to-indigo-600 dark:from-white dark:via-blue-400 dark:to-indigo-400 font-serif leading-none">
               Erek
             </span>

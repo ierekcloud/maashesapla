@@ -1,8 +1,23 @@
-# 2026 Maaş ve Bordro Hesaplama Uygulaması
+# 2026 Maaş ve Bordro Hesaplama Uygulaması (v2.7)
 
-Modern, kapsamlı ve mevzuata tam uyumlu 2026 yılı maaş ve bordro hesaplama platformu.
+Modern, kapsamlı, yüksek performanslı ve mevzuata tam uyumlu 2026 yılı maaş, vergi ve bordro hesaplama platformu.
 
-## 🚀 Özellikler
+![Sürüm](https://img.shields.io/badge/Sürüm-v2.7-blue.svg)
+![Yıl](https://img.shields.io/badge/Mevzuat-2026-emerald.svg)
+![React](https://img.shields.io/badge/React-19-cyan.svg)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-indigo.svg)
+
+---
+
+## 🌟 Sürüm 2.7 Yenilikleri
+- **Gözü Yormayan Zarif Arka Plan:** Yumuşak, dengeli ve koyulaştırılmış estetik nakit/dolar arka plan dokusu.
+- **Sadeleştirilmiş Header:** Gereksiz butonlar arındırılmış, modern ve akıcı üst navigasyon.
+- **v2.7 Sürüm Etiketi:** Başlıkta ve imza alanında dinamik sürüm göstergesi.
+- **Tek Tık Taşınabilir HTML (`Maas_Hesapla.html`):** Kurulum gerektirmeyen, doğrudan çift tıkla her cihazda çalışan derleme çıktısı.
+
+---
+
+## 🚀 Temel Özellikler
 
 - **3 Farklı Çalışma Modeli:**
   - **Vardiyalı (Sendikalı):** Vardiya primleri, vardiyalı çalışma günleri, sendika aidatı (%80 brüt yevmiye), ikramiye günleri (20-20-20-20-20-12), servis ve bayram parası hesaplamaları.
@@ -48,6 +63,21 @@ Uygulama varsayılan olarak `http://localhost:3000` adresinde çalışacaktır.
 npm run build
 ```
 Derleme çıktısı `dist/` klasörüne ve kök dizindeki bağımsız `Maas_Hesapla.html` dosyasına aktarılır.
+
+---
+
+## 📤 GitHub'a Yükleme (Push) Adımları
+
+Projeyi kendi GitHub deponuza göndermek için terminalden şu komutları uygulayabilirsiniz:
+
+```bash
+# 1. Kendi GitHub deponuzun linkini ekleyin:
+git remote add origin https://github.com/KULLANICI_ADINIZ/REPO_ADINIZ.git
+
+# 2. Ana dala geçin ve gönderin:
+git branch -M main
+git push -u origin main
+```
 
 ---
 

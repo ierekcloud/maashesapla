@@ -11,29 +11,21 @@
 
 @layer base {
   body {
-    @apply font-sans bg-[#f8fafc] text-slate-900 antialiased;
+    @apply font-sans bg-slate-950 text-slate-900 dark:text-slate-100 antialiased;
   }
 }
 
 /* Custom Backgrounds */
 .bg-mesh {
-  background-color: #f1f5f9;
-  background-image: 
-    radial-gradient(at 0% 0%, hsla(210,40%,96%,1) 0, transparent 50%), 
-    radial-gradient(at 50% 0%, hsla(220,40%,95%,1) 0, transparent 50%), 
-    radial-gradient(at 100% 0%, hsla(230,40%,96%,1) 0, transparent 50%);
+  background-color: transparent;
 }
 
 .dark .bg-mesh {
-  background-color: #020617;
-  background-image: 
-    radial-gradient(at 0% 0%, hsla(220,100%,10%,1) 0, transparent 50%), 
-    radial-gradient(at 50% 0%, hsla(230,100%,8%,1) 0, transparent 50%), 
-    radial-gradient(at 100% 0%, hsla(240,100%,10%,1) 0, transparent 50%);
+  background-color: transparent;
 }
 
 .glass-panel {
-  @apply backdrop-blur-3xl bg-slate-50/80 dark:bg-slate-900/60 border border-slate-200/60 dark:border-white/10 shadow-[0_8px_40px_rgba(15,23,42,0.03)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.3)];
+  @apply backdrop-blur-sm bg-white/55 dark:bg-slate-950/55 border border-white/50 dark:border-white/10 shadow-[0_12px_45px_rgba(0,0,0,0.18)] dark:shadow-[0_20px_80px_rgba(0,0,0,0.5)];
 }
 
 /* Hide number input arrows */
@@ -57,4 +49,19 @@ input[type=number] {
 
 .gradient-text {
   @apply bg-clip-text text-transparent bg-gradient-to-br from-blue-600 to-indigo-700;
+}
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  header, footer, button, .no-print {
+    display: none !important;
+  }
+  .glass-panel {
+    border: 1px solid #e2e8f0 !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
 }

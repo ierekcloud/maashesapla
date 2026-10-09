@@ -1,23 +1,23 @@
 import { MonthInput, SalaryResult } from '../types';
 
-// 2025 Official Parameters
-const SGK_CEILING = 150018.75 * 1.5; // SGK tavanı genellikle asgari ücretin 7.5 katıdır (2025 için 247k civarı)
+// 2026 Official Parameters (Türk Telekom Bordro Standartları)
+const SGK_CEILING = 197160.49; // 2026 Resmi SGK Tavanı (26.288,07 * 7.5)
 const MIN_WAGE_GROSS_2025 = 33030.00;
 const MIN_WAGE_SGK_2025 = MIN_WAGE_GROSS_2025 * 0.15;
 const MIN_WAGE_TAX_BASE_2025 = MIN_WAGE_GROSS_2025 - MIN_WAGE_SGK_2025; // 28,075.50
 
-// 2025 Wage Income Tax Brackets (Official)
+// 2026 Ücret Gelir Vergisi Dilimleri (GVK Madde 103 - Ücretliler Tarifesi)
+// Ücret gelirlerinde %27 dilimi 4.300.000 TL'ye kadar geçerlidir.
 const TAX_BRACKETS = [
   { limit: 158000, rate: 0.15 },
   { limit: 330000, rate: 0.20 },
-  { limit: 1200000, rate: 0.27 },
-  { limit: 4300000, rate: 0.35 },
-  { limit: Infinity, rate: 0.40 }
+  { limit: 4300000, rate: 0.27 },
+  { limit: Infinity, rate: 0.35 }
 ];
 
-// 2026 Allowance Values (Varsayılan değerler, eğer sözleşmenizde farklıysa güncellenebilir)
-const FAMILY_ALLOWANCE_VAL = 1500; // Örnek Aile yardımı (Eşi çalışmayanlar için)
-const CHILD_ALLOWANCE_VAL = 500;   // Örnek Çocuk yardımı (Çocuk başına)
+// Türk Telekom TİS bordrosunda ayrı nakit aile/çocuk yardımı kalemi bulunmaz (Bordroda 0 TL)
+const FAMILY_ALLOWANCE_VAL = 0; 
+const CHILD_ALLOWANCE_VAL = 0;
 
 export function calculateIncomeTax(taxableIncome: number, cumulative: number) {
   let remainingBase = taxableIncome;
@@ -105,9 +105,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
                gvBaseInput: 0, dvBaseInput: 0, taxObj: { tax: 0, bracketRate: '15' },
                nonCashNT: 0, childAllowanceGross: 0, familyAllowanceGross: 0 };
     }
-    const effectiveBaseGross = ((m.workerType === 'shift' || m.workerType === 'non-shift') && monthIndex >= 8 && monthIndex <= 11)
-      ? m.baseGross * 1.08
-      : m.baseGross;
+    const effectiveBaseGross = m.baseGross;
 
     const DAILY_GROSS = effectiveBaseGross / 30;
     const HOURLY_GROSS = DAILY_GROSS / 7.5;
@@ -136,20 +134,20 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     if (monthIndex === 0 || monthIndex === 1) {
       hourlyVardiyaRate = 73.67;
     } else if (monthIndex >= 8 && monthIndex <= 11) {
-      hourlyVardiyaRate = 91.36 * 1.08; // 98.6688 ≈ 98.67 TL
+      hourlyVardiyaRate = 98.67;
     }
     const dailyVardiyaRate = hourlyVardiyaRate * 7.5;
     const vardiyaGross = m.shiftHours ? (m.shiftHours * hourlyVardiyaRate) : ((m.shiftDays || 0) * dailyVardiyaRate); 
     
     // Servis/Taşıt Ücreti:
     // - Ocak ve Şubat: Günlük brüt 237.75 TL (13 gün = 3.090,75 TL brüt)
-    // - Mart ve sonrası: Günlük brüt 362.85 TL (13 gün = 4.717,05 TL brüt)
+    // - Mart ve sonrası: Günlük brüt 362.8595 TL (21 gün = 7.620,05 TL, 13 gün = 4.717,17 TL brüt)
     // - Vardiyasız çalışan personelin sabit servisi vardır (13 günlük).
-    // - Vardiyalı çalışan personelde: Servis kullanan 13 günlük, kullanmayan vardiya gün sayısı kadar alır.
-    const dailyShuttleRate = (monthIndex === 0 || monthIndex === 1) ? 237.75 : 362.85;
+    // - Vardiyalı çalışan personelde: Servis kullanan 13 günlük, kullanmayan kişi ise yol gün sayısı (varsayılan 21 gün) kadar alır.
+    const dailyShuttleRate = (monthIndex === 0 || monthIndex === 1) ? 237.75 : 362.85952;
     const effShuttleDays = m.workerType === 'non-shift'
       ? 13
-      : (m.hasShuttle ? 13 : ((m.shiftDays && m.shiftDays > 0) ? m.shiftDays : (m.shuttleDays || 20)));
+      : (m.hasShuttle ? 13 : (m.shuttleDays !== undefined && m.shuttleDays > 0 ? m.shuttleDays : 21));
     const shuttleGross = effShuttleDays * dailyShuttleRate;
     const istanbulGross = effectiveBaseGross * 0.06;
     const additionalHolidayBonus = m.hasHolidayBonus ? 17875 : (m.holidayBonusGross || 0);
@@ -162,10 +160,9 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
       : (actualShiftMealDays > 0 ? actualShiftMealDays : (m.yemekGun || 21));
 
     // Non-Cash benefits target net values (Telekom specifications)
-    // Only applied if we assume it's a shifted / telekom user... we will apply if yemekGunEff > 0 or istanbul > 0
     const hasYanHaklar = yemekGunEff > 0 || (m.istanbulTazminati || 0) > 0;
     const targetYemekNt = yemekGunEff * 550;
-    const targetPstnAdslNt = hasYanHaklar ? (128.99 + 522.86) : 0;
+    const targetPstnAdslNt = hasYanHaklar ? (145.00 + 664.93) : 0;
     const targetSsyvNt = hasYanHaklar ? 2769.75 : 0;
     const targetHayatNt = hasYanHaklar ? 86.58 : 0;
     const ssyvKesintisiCash = hasYanHaklar ? 923.25 : 0; // cash deduction later
@@ -176,15 +173,13 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     }
     const childAllowanceGross = (m.childCount || 0) * (m.childAllowanceGrossOverride ?? CHILD_ALLOWANCE_VAL);
 
-    let marginalGV = 0.20; 
+    let marginalGV = 0.27; 
     let nbPstnAdsl = targetPstnAdslNt / (1 - marginalGV - 0.00759);
-    let yemekNominator = targetYemekNt - 300 * yemekGunEff * (marginalGV + 0.00759);
-    let nbYemek = yemekNominator > 0 ? (yemekNominator / (1 - marginalGV - 0.00759)) : targetYemekNt;
-    if (nbYemek < targetYemekNt) nbYemek = targetYemekNt; 
+    let nbYemek = targetYemekNt > 0 ? (yemekGunEff * 694.3027) : 0;
     let nbHayat = targetHayatNt / (1 - 0.15 - 0.00759);
     let nbSsyv = targetSsyvNt / (1 - 0.15 - (marginalGV * 0.85) - 0.00759);
 
-    let totalGross = 0, sgkEmployee = 0, unemployment = 0, totalSgk = 0, gvBaseInput = 0, dvBaseInput = 0, taxObj = { tax: 0, bracketRate: '15' };
+    let totalGross = 0, sgkEmployee = 0, unemployment = 0, totalSgk = 0, gvBaseInput = 0, dvBaseInput = 0, taxObj = { tax: 0, bracketRate: '27' };
 
     for(let i=0; i<3; i++) {
         // Recalculate with refined NBs
@@ -194,32 +189,32 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
         let exemptFamilySGK = familyAllowanceGross > 0 ? Math.min(familyAllowanceGross, MIN_WAGE_GROSS_2025 * 0.10) : 0;
         let exemptChildSGK = childAllowanceGross > 0 ? Math.min(childAllowanceGross, MIN_WAGE_GROSS_2025 * 0.02 * Math.min(m.childCount || 0, 2)) : 0;
 
-        let sgkBaseInput = totalGross - nbPstnAdsl - nbYemek - exemptFamilySGK - exemptChildSGK; 
+        const exemptMealSGK = yemekGunEff * 339.79115;
+        const exemptHayatSGK = hasYanHaklar ? 86.58 : 0;
+        let sgkBaseInput = totalGross - exemptMealSGK - exemptHayatSGK - exemptFamilySGK - exemptChildSGK; 
         const sgkBase = Math.min(Math.max(sgkBaseInput, 0), SGK_CEILING);
-        sgkEmployee = sgkBase * 0.14;
-        unemployment = sgkBase * 0.01;
-        totalSgk = sgkEmployee + unemployment;
+        sgkEmployee = Number((sgkBase * 0.14).toFixed(2));
+        unemployment = Number((sgkBase * 0.01).toFixed(2));
+        totalSgk = Number((sgkEmployee + unemployment).toFixed(2));
         
         gvBaseInput = totalGross - totalSgk;
         if (m.workerType !== 'non-shift' && m.isUnionMember) gvBaseInput -= (effectiveBaseGross / 30) * 0.80; 
         if (hasYanHaklar) gvBaseInput -= 86.58; // Hayat GV istisna
-        gvBaseInput -= (296.59 * yemekGunEff); // Yemek GV istisna
+        gvBaseInput -= (330.03 * yemekGunEff); // Yemek GV istisna
         if (gvBaseInput < 0) gvBaseInput = 0;
 
         taxObj = calculateIncomeTax(gvBaseInput, currentCumulativeTax);
         
-        let applicableRateStr = taxObj.bracketRate.split('-').pop() || "20";
+        let applicableRateStr = taxObj.bracketRate.split('-').pop() || "27";
         marginalGV = parseInt(applicableRateStr) / 100;
         
         // Refine NBs
         nbPstnAdsl = targetPstnAdslNt / (1 - marginalGV - 0.00759);
-        let nYemek = targetYemekNt - 300 * yemekGunEff * (marginalGV + 0.00759);
-        nbYemek = nYemek > 0 ? (nYemek / (1 - marginalGV - 0.00759)) : targetYemekNt;
-        if (nbYemek < targetYemekNt) nbYemek = targetYemekNt;
+        nbYemek = targetYemekNt > 0 ? (yemekGunEff * 694.3027) : 0;
         nbSsyv = targetSsyvNt / (1 - 0.15 - (marginalGV * 0.85) - 0.00759);
     }
 
-    dvBaseInput = totalGross - (300 * yemekGunEff);
+    dvBaseInput = totalGross - (330 * yemekGunEff);
     
     return {
        totalGross, sgkEmployee, unemployment, totalSgk, gvBaseInput, dvBaseInput, taxObj,
@@ -266,9 +261,7 @@ export function calculateYear(months: MonthInput[], selectedWorkerType?: 'shift'
     // Private deductions (Non-cash reversed out)
     const bysKesintisi = (data.bysManuel || 0);
     const dernekKesintisi = (data.isDernekMember ? 150 : 0);
-    const effectiveBaseGrossMain = ((data.workerType === 'shift' || data.workerType === 'non-shift') && i >= 8 && i <= 11)
-      ? data.baseGross * 1.08
-      : data.baseGross;
+    const effectiveBaseGrossMain = data.baseGross;
     const unionDuesDeduction = (data.isUnionMember ? (effectiveBaseGrossMain / 30) * 0.80 : 0);
     
     // Total non-cash reverse + standard private deductions
