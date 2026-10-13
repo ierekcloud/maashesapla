@@ -1,5 +1,5 @@
 // 2026 Maaş ve Bordro Hesaplama Uygulaması
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Plus,
   Minus,
@@ -49,6 +49,13 @@ import autoTable from "jspdf-autotable";
 import { MonthInput, SalaryResult, CalculationHistory } from "./types";
 import { calculateYear } from "./lib/salaryLogic";
 import { formatCurrency, cn } from "./lib/utils";
+import { AdminModal } from "./components/AdminModal";
+import {
+  recordVisit,
+  recordModelChoice,
+  recordCalculationEvent,
+  recordExportEvent,
+} from "./lib/analytics";
 
 // --- Sub-components ---
 
@@ -317,9 +324,63 @@ export default function App() {
   );
   const [showPrivacyNotice, setShowPrivacyNotice] = useState(true);
   const [showSuggestionBox, setShowSuggestionBox] = useState(true);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isMonthMenuOpen, setIsMonthMenuOpen] = useState(false);
   const [showAppliedFeedback, setShowAppliedFeedback] = useState(false);
   const [showChildCount, setShowChildCount] = useState(false);
+
+  // Gizli Yönetici Girişi Kısayolları (Kullanıcılar Şüphelenmesin Diye Buton Yoktur)
+  const secretClickCountRef = useRef(0);
+  const secretClickTimeRef = useRef(0);
+
+  const handleSecretAuthorClick = () => {
+    const now = Date.now();
+    if (now - secretClickTimeRef.current > 1500) {
+      secretClickCountRef.current = 1;
+    } else {
+      secretClickCountRef.current += 1;
+      if (secretClickCountRef.current >= 3) {
+        setIsAdminModalOpen(true);
+        secretClickCountRef.current = 0;
+      }
+    }
+    secretClickTimeRef.current = now;
+  };
+
+  // Sayfaya ilk girişte ziyaret kaydını başlat ve gizli kısayolları dinle
+  useEffect(() => {
+    recordVisit("Siteye Giriş Yapıldı");
+
+    // Gizli Klavye Kısayolu: Alt + A veya Ctrl + Shift + A
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.altKey && (e.key === "a" || e.key === "A" || e.key === "å")) ||
+        (e.ctrlKey && e.shiftKey && (e.key === "a" || e.key === "A"))
+      ) {
+        e.preventDefault();
+        setIsAdminModalOpen((prev) => !prev);
+      }
+    };
+
+    // Gizli URL Hash/Search kontrolü: #admin veya ?admin
+    const checkUrlAdmin = () => {
+      if (
+        window.location.hash.toLowerCase() === "#admin" ||
+        window.location.search.toLowerCase().includes("admin")
+      ) {
+        setIsAdminModalOpen(true);
+      }
+    };
+
+    checkUrlAdmin();
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("hashchange", checkUrlAdmin);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("hashchange", checkUrlAdmin);
+    };
+  }, []);
 
   const [workerType, setWorkerType] = useState<"shift" | "non-shift" | "shift-non-union" | null>(null);
 
@@ -494,6 +555,7 @@ export default function App() {
     setWorkerType(type);
     setShowPrivacyNotice(true);
     setShowSuggestionBox(true);
+    recordModelChoice(type);
 
     if (type === "non-shift") {
       setMonthsData((prev) => {
@@ -549,6 +611,7 @@ export default function App() {
 
   const saveToHistory = () => {
     if (!activeResult || activeResult.totalGross === 0) return;
+    recordCalculationEvent();
     const newEntry: CalculationHistory = {
       ...activeResult,
       id: generateId(),
@@ -569,6 +632,7 @@ export default function App() {
 
   const exportToPDF = () => {
     try {
+      recordExportEvent();
       const doc = new jsPDF();
 
       doc.setFontSize(16);
@@ -2391,10 +2455,11 @@ export default function App() {
 
       {/* Notification Box */}
       {showSuggestionBox && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-[200px] pointer-events-auto bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-200/80 dark:border-white/10 shadow-md flex items-center gap-2 transition-all">
+        <div className="fixed bottom-6 right-6 z-50 max-w-[230px] pointer-events-auto bg-slate-950/95 dark:bg-black/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-slate-700/80 shadow-2xl flex items-center gap-2.5 transition-all text-white">
           <button
             onClick={() => setShowSuggestionBox(false)}
-            className="text-slate-500 hover:text-rose-500 transition-colors"
+            className="text-slate-400 hover:text-rose-400 transition-colors p-1 cursor-pointer"
+            title="Kapat"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -2402,35 +2467,35 @@ export default function App() {
           </button>
           <a
             href="mailto:ibrahim.erek@turktelekom.com.tr"
-            className="flex items-center gap-2 cursor-pointer"
+            className="flex items-center gap-2 cursor-pointer group"
           >
-            <div className="w-5 h-5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <Info size={11} strokeWidth={2.5} />
+            <div className="w-6 h-6 rounded-lg bg-zinc-800 text-white flex items-center justify-center shrink-0 border border-zinc-700">
+              <Info size={12} strokeWidth={2.5} />
             </div>
-            <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 leading-tight text-right break-words">
+            <p className="text-[10px] font-bold text-slate-200 group-hover:text-white leading-tight text-right break-words">
               Öneri ve Talepleriniz için mail iletebilirsiniz.
             </p>
           </a>
         </div>
       )}
 
-      <footer className="fixed bottom-4 left-4 lg:left-6 z-40 pointer-events-auto flex flex-col items-start gap-2 max-w-[170px] w-full hidden lg:flex">
-        {/* Security & Privacy Notice (Square Block) */}
+      <footer className="fixed bottom-4 left-4 lg:left-6 z-40 pointer-events-auto flex flex-col items-start gap-2">
+        {/* Güvenlik ve Gizlilik Bildirimi (Okunaklı Siyah Yüksek Kontrastlı Tasarım) */}
         {showPrivacyNotice && (
-          <div className="w-full aspect-square rounded-2xl p-2.5 bg-gradient-to-br from-emerald-500/[0.09] via-teal-500/[0.05] to-cyan-500/[0.04] dark:from-emerald-500/[0.18] dark:via-teal-500/[0.1] dark:to-cyan-500/[0.06] border border-emerald-500/25 dark:border-emerald-500/35 shadow-xl flex flex-col justify-between backdrop-blur-md">
+          <div className="w-72 max-w-[290px] rounded-2xl p-3.5 bg-slate-950/95 dark:bg-black/95 border-2 border-slate-800 dark:border-zinc-700 shadow-[0_20px_50px_rgba(0,0,0,0.7)] flex flex-col gap-2.5 backdrop-blur-xl text-white transition-all">
             <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-1.5">
-                <div className="w-6.5 h-6.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-inner">
-                  <Lock size={12} className="animate-pulse" />
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-xl bg-zinc-800 text-white flex items-center justify-center shrink-0 border border-zinc-700 shadow-sm">
+                  <Lock size={13} className="text-white" />
                 </div>
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[7px] font-black tracking-wider uppercase">
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-100 text-[8px] font-black tracking-wider uppercase border border-zinc-700">
                   GÜVENLİ
-                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_rgba(255,255,255,0.9)] animate-pulse" />
                 </span>
               </div>
               <button
                 onClick={() => setShowPrivacyNotice(false)}
-                className="text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 transition-colors"
+                className="text-zinc-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-zinc-800 cursor-pointer"
                 title="Kapat"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2439,34 +2504,50 @@ export default function App() {
               </button>
             </div>
             
-            <div className="space-y-0.5">
-              <span className="text-[8px] font-black text-emerald-800 dark:text-emerald-300 uppercase tracking-widest block leading-none">
+            <div className="space-y-1">
+              <span className="text-[10px] font-black text-white uppercase tracking-wider block leading-none">
                 GÜVENLİK VE GİZLİLİK
               </span>
-              <p className="text-[9px] text-slate-700 dark:text-slate-200 font-semibold leading-normal">
+              <p className="text-[10.5px] text-zinc-200 font-medium leading-relaxed">
                 Girdiğiniz veriler sadece size özeldir. Tamamen tarayıcınızda (yerel olarak) işlenir; başka hiçbir kullanıcı ya da sunucu göremez.
               </p>
+            </div>
+
+            <div className="pt-2 border-t border-zinc-800/80 flex items-center justify-between text-[9px] text-zinc-400 font-semibold">
+              <span className="flex items-center gap-1">🔒 %100 Yerel Veri</span>
+              <span className="text-zinc-300 font-bold">Gizlilik Garantili</span>
             </div>
           </div>
         )}
 
-        {/* Signature */}
-        <div className="opacity-70 hover:opacity-100 transition-all group translate-y-1 hover:translate-y-0 pl-1">
+        {/* Signature & Gizli Yönetici Girişi (3 Tıklama) */}
+        <div
+          onClick={handleSecretAuthorClick}
+          className="opacity-80 hover:opacity-100 transition-all select-none pl-1 cursor-default"
+        >
           <div className="flex flex-col items-start">
             <div className="flex items-center gap-1.5 mb-0.5">
-              <span className="text-[8px] font-black tracking-[0.4em] text-slate-500 dark:text-slate-400 uppercase animate-pulse">
+              <span className="text-[8px] font-black tracking-[0.4em] text-slate-400 dark:text-slate-400 uppercase">
                 CREATED BY
               </span>
-              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300">
+              <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-slate-900/80 border border-slate-700 text-slate-200">
                 v2.7
               </span>
             </div>
-            <span className="text-xl font-black italic tracking-tighter text-slate-950 dark:text-white bg-clip-text text-transparent bg-gradient-to-br from-slate-900 via-blue-600 to-indigo-600 dark:from-white dark:via-blue-400 dark:to-indigo-400 font-serif leading-none">
-              Erek
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xl font-black italic tracking-tighter text-slate-950 dark:text-white bg-clip-text text-transparent bg-gradient-to-br from-slate-900 via-blue-600 to-indigo-600 dark:from-white dark:via-blue-400 dark:to-indigo-400 font-serif leading-none">
+                Erek
+              </span>
+            </div>
           </div>
         </div>
       </footer>
+
+      {/* Admin Panel Modal */}
+      <AdminModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+      />
 
     </div>
   );
